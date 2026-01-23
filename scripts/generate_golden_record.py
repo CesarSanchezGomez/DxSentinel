@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 
 # ================= CONFIGURACIÓN =================
-LANGUAGE_CODE = "es-mx"  # Opciones: "es", "es-mx", "en", "en-us", "fr", etc.
+LANGUAGE_CODE = "en-US"  # Opciones: "es", "es-mx", "en", "en-us", "fr", etc.
 # =================================================
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -24,7 +24,7 @@ def get_absolute_path(relative_path: str) -> Path:
 
 def main():
     """Función principal del script."""
-    XML_FILE = get_absolute_path("data/xml/sample_sdm.xml")
+    XML_FILE = get_absolute_path("data/xml/sdm_español.xml")
     OUTPUT_DIR = get_absolute_path("output/golden_record")
 
     try:

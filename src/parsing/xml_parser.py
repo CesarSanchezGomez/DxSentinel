@@ -474,3 +474,189 @@ class XMLParser:
         # Filtrar atributos que aparecen en múltiples nodos
         common = {k: v for k, v in attribute_counts.items() if v > 1}
         return dict(sorted(common.items(), key=lambda x: x[1], reverse=True))
+    
+    HRIS_ELEMENT_PATTERN = re.compile(r'.*hris.*element.*', re.IGNORECASE)
+
+    ELEMENT_FIELD_MAPPING = {
+    'personalInfo': 'effectiveStartDate',
+    'PaymentInfo': 'effectiveStartDate',
+    'employmentInfo': 'hireDate',
+    # Agregar más mapeos según sea necesario
+    # formato: 'element_id': 'field_id_to_inject'
+}
+    
+    # En xml_parser.py, modificar la función
+    def _should_inject_start_date_field(self, node: XMLNode) -> tuple[bool, str]:
+        """
+        Determina si debemos inyectar un campo de fecha.
+        Retorna: (debe_inyectar, field_id_a_inyectar)
+        """
+        # Verificar si el tag coincide con hris-element
+        if not self.HRIS_ELEMENT_PATTERN.match(node.tag):
+            return False, ""
+        
+        # Obtener el ID del elemento
+        element_id = node.technical_id or node.attributes.get('id')
+        
+        # Verificar si el ID está en el mapeo
+        if element_id and element_id in self.ELEMENT_FIELD_MAPPING:
+            field_id = self.ELEMENT_FIELD_MAPPING[element_id]
+            return True, field_id
+        
+        return False, ""
+    
+    def _create_date_field_node(self, field_id: str) -> XMLNode:
+        """
+        Crea el nodo del campo de fecha con el ID específico.
+        Mantiene toda la estructura estándar, solo cambia el ID.
+        """
+        # Atributos del campo - ID dinámico según el mapeo
+        attributes = {
+            'id': field_id,
+            'visibility': 'view',
+            'required': 'true'
+        }
+        
+        # Labels multilenguaje (pueden personalizarse por field_id si es necesario)
+        labels = self._get_field_labels(field_id)
+        
+        # Crear el nodo del campo
+        field_node = XMLNode(
+            tag='hris-field',
+            technical_id=field_id,
+            attributes=attributes,
+            labels=labels,
+            children=[],  # Sin hijos adicionales
+            parent=None,  # Se establecerá después
+            depth=0,      # Se ajustará según el padre
+            sibling_order=0,  # Se ajustará
+            namespace=None,
+            text_content=None,
+            node_type=NodeType.FIELD
+        )
+        
+        return field_node
+    def _get_field_labels(self, field_id: str) -> Dict[str, str]:
+        """
+        Obtiene los labels para el campo según su ID.
+        Puede personalizarse por tipo de campo.
+        """
+        # Labels base que se aplican a todos
+        base_labels = {
+            'default': 'Start Date',
+            'en-debug': 'Start Date',
+            'es-mx': 'Fecha del Evento',
+            'en-us': 'Start Date'
+        }
+        
+        # Personalizar según el ID del campo
+        label_customizations = {
+            'effectiveStartDate': {
+                'default': 'Effective Start Date',
+                'en-debug': 'Effective Start Date',
+                'es-mx': 'Fecha de Inicio Efectiva',
+                'en-us': 'Effective Start Date'
+            },
+            'hireDate': {
+                'default': 'Hire Date',
+                'en-debug': 'Hire Date',
+                'es-mx': 'Fecha de Contratación',
+                'en-us': 'Hire Date'
+            }
+            # Agregar más personalizaciones según sea necesario
+        }
+        
+        # Usar personalización si existe, si no usar base
+        if field_id in label_customizations:
+            return label_customizations[field_id]
+        
+        return base_labels
+    
+    def _parse_element(self,
+                       element: ET.Element,
+                       parent: Optional[XMLNode],
+                       sibling_order: int,
+                       depth: int,
+                       namespaces: Dict[str, str]) -> XMLNode:
+        """
+        Parsea recursivamente un elemento y todos sus hijos.
+        MODIFICADO: Inyecta campos de fecha según mapeo en hris-elements específicos.
+        """
+        self._node_count += 1
+
+        # Extraer información básica
+        tag = self._extract_tag_name(element)
+        attributes = self._extract_attributes(element)
+
+        # Extraer labels multilenguaje sin asumir estructura
+        labels = self._extract_labels(element, attributes, namespaces)
+
+        # Extraer namespace
+        namespace = self._extract_namespace(element, namespaces)
+
+        # Procesar primero los hijos que NO son labels
+        children: List[XMLNode] = []
+        non_label_children_elements = []
+
+        for i, child_elem in enumerate(element):
+            child_tag = self._extract_tag_name(child_elem)
+
+            # Solo procesar ahora los hijos que NO son labels
+            if not self._is_label_element(child_tag, child_elem):
+                non_label_children_elements.append((i, child_elem))
+
+        # Crear el nodo primero con los labels ya extraídos
+        node = XMLNode(
+            tag=tag,
+            technical_id=None,  # Se establecerá en __post_init__
+            attributes=attributes,
+            labels=labels,
+            children=[],  # Inicialmente vacío
+            parent=parent,
+            depth=depth,
+            sibling_order=sibling_order,
+            namespace=namespace,
+            text_content=self._extract_text_content(element),
+            node_type=NodeType.UNKNOWN
+        )
+        
+        # PUNTO CRÍTICO: Verificar si debemos inyectar un campo de fecha
+        should_inject, field_id = self._should_inject_start_date_field(node)
+        
+        if should_inject:
+            # Crear el campo con el ID específico del mapeo
+            date_field = self._create_date_field_node(field_id)
+            
+            # Ajustar propiedades del campo para que sea hijo del nodo actual
+            date_field.parent = node
+            date_field.depth = depth + 1
+            # Agregar como primer hijo (orden 0)
+            date_field.sibling_order = 0
+            children.append(date_field)
+            
+            # Ajustar sibling_order de los hijos originales
+            for i, child_elem in non_label_children_elements:
+                child_node = self._parse_element(
+                    element=child_elem,
+                    parent=node,
+                    sibling_order=i + 1,  # +1 porque el campo inyectado es el 0
+                    depth=depth + 1,
+                    namespaces=namespaces
+                )
+                children.append(child_node)
+        else:
+            # Procesar hijos normalmente (sin campo inyectado)
+            for i, child_elem in non_label_children_elements:
+                child_node = self._parse_element(
+                    element=child_elem,
+                    parent=node,
+                    sibling_order=i,
+                    depth=depth + 1,
+                    namespaces=namespaces
+                )
+                children.append(child_node)
+
+        # Asignar los hijos al nodo
+        node.children = children
+
+        return node
