@@ -1,0 +1,16 @@
+# PyCharm
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+*.venv
+*.egg-info/
+dist/
+build/
+
+# VSCode (opcional)
+.vscode/
