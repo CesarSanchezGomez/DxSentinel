@@ -13,9 +13,9 @@ class GoldenRecordGenerator:
     def __init__(self, output_dir: str = "output/golden_record", target_country: Optional[str] = None):
         """
         Args:
-            output_dir: Directorio de salida para los archivos CSV
-            target_country: Código de país específico a incluir (ej: "MEX").
-                           Si es None, incluye todos los países.
+            output_dir: Output directory for CSV files
+            target_country: Specific country code to include (e.g., "MEX").
+                           If None, includes all countries.
         """
         self.output_dir = output_dir
         self.target_country = target_country
@@ -38,7 +38,6 @@ class GoldenRecordGenerator:
 
             language_normalized = language_code.lower().replace('_', '-')
             
-            # Nombre de archivo basado en país si está filtrado
             if self.target_country:
                 template_name = f"golden_record_template_{language_normalized}_{self.target_country}.csv"
             else:
@@ -46,10 +45,6 @@ class GoldenRecordGenerator:
             
             template_path = output_dir / template_name
 
-            if self.target_country:
-                print(f"🎯 Generando golden record para país: {self.target_country}")
-                print(f"📄 Archivo: {template_name}")
-            
             return self.csv_gen.generate_template_csv(
                 parsed_model, str(template_path), language_normalized
             )
