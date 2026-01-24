@@ -9,7 +9,8 @@ import logging
 import re
 
 from .xml_elements import XMLNode, XMLDocument, NodeType
-
+from .xml_normalizer import XMLNormalizer
+from .xml_loader import XMLLoader
 logger = logging.getLogger(__name__)
 
 
@@ -478,9 +479,11 @@ class XMLParser:
     HRIS_ELEMENT_PATTERN = re.compile(r'.*hris.*element.*', re.IGNORECASE)
 
     ELEMENT_FIELD_MAPPING = {
-    'personalInfo': 'effectiveStartDate',
+    'personalInfo': 'start-date',
     'PaymentInfo': 'effectiveStartDate',
     'employmentInfo': 'hireDate',
+    'globalInfo' : 'start-date',
+    'homeAddress' : 'start-date'
     # Agregar más mapeos según sea necesario
     # formato: 'element_id': 'field_id_to_inject'
 }
@@ -660,3 +663,240 @@ class XMLParser:
         node.children = children
 
         return node
+    
+
+
+def parse_multiple_xml_files(files: List[Dict[str, str]]) -> Dict[str, Any]:
+    """
+    Parsea múltiples archivos XML y los fusiona en un solo árbol.
+    
+    Args:
+        files: Lista de diccionarios con 'path' y 'type' (ej: 'main', 'csf')
+        
+    Returns:
+        Dict normalizado con toda la metadata fusionada
+    """
+    loader = XMLLoader()
+    parser = XMLParser()
+    normalizer = XMLNormalizer()
+    
+    documents = []
+    
+    for file_info in files:
+        try:
+            file_path = file_info['path']
+            file_type = file_info.get('type', 'main')
+            source_name = file_info.get('source_name', file_path)
+            
+            # Cargar XML
+            xml_root = loader.load_from_file(file_path, source_name)
+            
+            # Parsear estructura
+            document = parser.parse_document(xml_root, source_name)
+            
+            # Agregar metadata del tipo de archivo
+            document.file_type = file_type
+            documents.append(document)
+            
+            print(f"✅ Parseado: {file_path} (tipo: {file_type})")
+            
+        except Exception as e:
+            print(f"❌ Error parseando {file_info.get('path')}: {e}")
+            raise
+    
+    # Fusionar documentos si hay más de uno
+    if len(documents) > 1:
+        fused_document = _fuse_csf_with_main(documents)
+    else:
+        fused_document = documents[0]
+    
+    # Normalizar el documento fusionado
+    normalized = normalizer.normalize_document(fused_document)
+    
+    return normalized
+
+def _fuse_csf_with_main(documents: List[XMLDocument]) -> XMLDocument:
+    """
+    Fusiona documentos CSF (Country Specific) con el documento principal.
+    Busca nodos <country> en CSF y los inserta en la estructura principal.
+    """
+    # Identificar documento principal y CSF
+    main_doc = None
+    csf_docs = []
+    
+    for doc in documents:
+        if getattr(doc, 'file_type', 'main') == 'main':
+            main_doc = doc
+        else:
+            csf_docs.append(doc)
+    
+    if not main_doc:
+        main_doc = documents[0]  # Fallback al primer documento
+    
+    # Si no hay CSF, retornar el principal
+    if not csf_docs:
+        return main_doc
+    
+    # Fusionar cada documento CSF
+    for csf_doc in csf_docs:
+        main_doc = _merge_country_nodes(main_doc, csf_doc)
+    
+    return main_doc
+
+def _merge_country_nodes(main_doc: XMLDocument, csf_doc: XMLDocument) -> XMLDocument:
+    """
+    Fusiona nodos <country> del CSF con el documento principal.
+    """
+    # Buscar nodos <country> en el documento CSF
+    csf_countries = _find_country_nodes(csf_doc.root)
+    
+    if not csf_countries:
+        print(f"⚠️  No se encontraron nodos <country> en {csf_doc.source_name}")
+        return main_doc
+    
+    print(f"🔍 Encontrados {len(csf_countries)} nodos <country> en CSF")
+    
+    # Para cada país del CSF, insertarlo en el documento principal
+    for country_node in csf_countries:
+        _insert_country_into_main(main_doc.root, country_node, csf_doc.source_name)
+    
+    return main_doc
+
+def _find_country_nodes(node: XMLNode) -> List[XMLNode]:
+    """
+    Encuentra recursivamente todos los nodos <country> en el árbol.
+    """
+    countries = []
+    
+    # Buscar por tag (case insensitive)
+    if 'country' in node.tag.lower():
+        countries.append(node)
+    
+    # Buscar recursivamente en hijos
+    for child in node.children:
+        countries.extend(_find_country_nodes(child))
+    
+    return countries
+
+def _insert_country_into_main(main_root: XMLNode, country_node: XMLNode, source_name: str):
+    """
+    Inserta un nodo país del CSF en la estructura principal.
+    Estrategia: Agregar como hijo directo del root si no existe.
+    """
+    # Obtener el código del país
+    country_code = country_node.technical_id or country_node.attributes.get('id', 'UNKNOWN')
+    
+    # Verificar si ya existe un país con este código en el main
+    existing_country = _find_country_by_code(main_root, country_code)
+    
+    if existing_country:
+        print(f"  🔄 País '{country_code}' ya existe en main, fusionando contenido...")
+        _merge_country_content(existing_country, country_node)
+    else:
+        print(f"  ➕ Insertando nuevo país '{country_code}' desde {source_name}")
+        # Clonar el nodo país (sin referencias al documento original)
+        cloned_country = _clone_node(country_node)
+        
+        # Ajustar jerarquía
+        cloned_country.parent = main_root
+        cloned_country.depth = main_root.depth + 1
+        cloned_country.sibling_order = len(main_root.children)
+        
+        # Agregar como hijo del root
+        main_root.children.append(cloned_country)
+
+def _find_country_by_code(node: XMLNode, country_code: str) -> Optional[XMLNode]:
+    """
+    Busca un nodo país por su código.
+    """
+    if 'country' in node.tag.lower():
+        current_code = node.technical_id or node.attributes.get('id')
+        if current_code == country_code:
+            return node
+    
+    for child in node.children:
+        result = _find_country_by_code(child, country_code)
+        if result:
+            return result
+    
+    return None
+
+def _merge_country_content(existing_country: XMLNode, new_country: XMLNode):
+    """
+    Fusiona el contenido de un país del CSF con uno existente.
+    """
+    # Para cada hris-element del nuevo país
+    for new_element in new_country.children:
+        if 'hris' in new_element.tag.lower() and 'element' in new_element.tag.lower():
+            element_id = new_element.technical_id or new_element.attributes.get('id')
+            
+            # Buscar si ya existe este elemento en el país existente
+            existing_element = None
+            for child in existing_country.children:
+                if ('hris' in child.tag.lower() and 'element' in child.tag.lower() and
+                    (child.technical_id or child.attributes.get('id')) == element_id):
+                    existing_element = child
+                    break
+            
+            if existing_element:
+                # Fusionar campos del elemento
+                _merge_element_fields(existing_element, new_element)
+            else:
+                # Agregar el nuevo elemento al país existente
+                cloned_element = _clone_node(new_element)
+                cloned_element.parent = existing_country
+                cloned_element.depth = existing_country.depth + 1
+                cloned_element.sibling_order = len(existing_country.children)
+                existing_country.children.append(cloned_element)
+
+def _merge_element_fields(existing_element: XMLNode, new_element: XMLNode):
+    """
+    Fusiona los campos (hris-field) de un elemento.
+    """
+    # Para cada campo del nuevo elemento
+    for new_field in new_element.children:
+        if 'hris' in new_field.tag.lower() and 'field' in new_field.tag.lower():
+            field_id = new_field.technical_id or new_field.attributes.get('id')
+            
+            # Verificar si ya existe este campo
+            field_exists = False
+            for existing_field in existing_element.children:
+                if ('hris' in existing_field.tag.lower() and 'field' in existing_field.tag.lower() and
+                    (existing_field.technical_id or existing_field.attributes.get('id')) == field_id):
+                    field_exists = True
+                    break
+            
+            if not field_exists:
+                # Agregar el nuevo campo
+                cloned_field = _clone_node(new_field)
+                cloned_field.parent = existing_element
+                cloned_field.depth = existing_element.depth + 1
+                cloned_field.sibling_order = len(existing_element.children)
+                existing_element.children.append(cloned_field)
+
+def _clone_node(node: XMLNode) -> XMLNode:
+    """
+    Crea una copia profunda de un nodo (sin referencias a hijos originales).
+    """
+    # Crear nuevo nodo con propiedades básicas
+    cloned = XMLNode(
+        tag=node.tag,
+        technical_id=node.technical_id,
+        attributes=node.attributes.copy(),
+        labels=node.labels.copy(),
+        children=[],  # Inicialmente vacío
+        parent=None,  # Se establecerá después
+        depth=node.depth,
+        sibling_order=node.sibling_order,
+        namespace=node.namespace,
+        text_content=node.text_content,
+        node_type=node.node_type
+    )
+    
+    # Clonar hijos recursivamente
+    for child in node.children:
+        cloned_child = _clone_node(child)
+        cloned_child.parent = cloned
+        cloned.children.append(cloned_child)
+    
+    return cloned

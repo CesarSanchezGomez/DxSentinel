@@ -5,7 +5,7 @@ Parseo agnóstico que se adapta a cualquier configuración válida del Successio
 
 from typing import Any, Dict
 from .xml_loader import XMLLoader
-from .xml_parser import XMLParser
+from .xml_parser import XMLParser,parse_multiple_xml_files
 from .xml_normalizer import XMLNormalizer
 from .xml_elements import XMLNode, XMLDocument, NodeType
 from .exceptions import (
@@ -64,3 +64,31 @@ def parse_successfactors_xml(file_path: str, source_name: str = None) -> Dict[st
     normalized = normalizer.normalize_document(document)
 
     return normalized
+# En __init__.py del módulo parsing
+def parse_successfactors_with_csf(main_xml_path: str, csf_xml_path: str = None) -> Dict[str, Any]:
+    """
+    Parsea el XML principal y opcionalmente un CSF, fusionándolos.
+    
+    Args:
+        main_xml_path: Ruta al XML principal (SDM)
+        csf_xml_path: Ruta al XML CSF (Country Specific Features)
+        
+    Returns:
+        Dict normalizado con toda la metadata fusionada
+    """
+    files = [
+        {
+            'path': main_xml_path,
+            'type': 'main',
+            'source_name': 'SDM_Principal'
+        }
+    ]
+    
+    if csf_xml_path:
+        files.append({
+            'path': csf_xml_path,
+            'type': 'csf',
+            'source_name': 'CSF_SDM'
+        })
+    
+    return parse_multiple_xml_files(files)

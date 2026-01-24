@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from pathlib import Path
 from .csv_generator import CSVGenerator
 from .exceptions import GoldenRecordError
@@ -10,9 +10,16 @@ __all__ = ["GoldenRecordGenerator", "GoldenRecordError"]
 class GoldenRecordGenerator:
     """Generator for golden_record_template.csv only."""
 
-    def __init__(self, output_dir: str = "output/golden_record"):
+    def __init__(self, output_dir: str = "output/golden_record", target_country: Optional[str] = None):
+        """
+        Args:
+            output_dir: Directorio de salida para los archivos CSV
+            target_country: Código de país específico a incluir (ej: "MEX").
+                           Si es None, incluye todos los países.
+        """
         self.output_dir = output_dir
-        self.csv_gen = CSVGenerator()
+        self.target_country = target_country
+        self.csv_gen = CSVGenerator(target_country=target_country)
 
     def generate_template(self, parsed_model: Dict, language_code: str = "en") -> str:
         """
@@ -30,8 +37,19 @@ class GoldenRecordGenerator:
             output_dir.mkdir(parents=True, exist_ok=True)
 
             language_normalized = language_code.lower().replace('_', '-')
-            template_path = output_dir / f"golden_record_template_{language_normalized}.csv"
+            
+            # Nombre de archivo basado en país si está filtrado
+            if self.target_country:
+                template_name = f"golden_record_template_{language_normalized}_{self.target_country}.csv"
+            else:
+                template_name = f"golden_record_template_{language_normalized}.csv"
+            
+            template_path = output_dir / template_name
 
+            if self.target_country:
+                print(f"🎯 Generando golden record para país: {self.target_country}")
+                print(f"📄 Archivo: {template_name}")
+            
             return self.csv_gen.generate_template_csv(
                 parsed_model, str(template_path), language_normalized
             )
