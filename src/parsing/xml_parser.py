@@ -669,12 +669,7 @@ class XMLParser:
 def parse_multiple_xml_files(files: List[Dict[str, str]]) -> Dict[str, Any]:
     """
     Parsea múltiples archivos XML y los fusiona en un solo árbol.
-    
-    Args:
-        files: Lista de diccionarios con 'path' y 'type' (ej: 'main', 'csf')
-        
-    Returns:
-        Dict normalizado con toda la metadata fusionada
+    MARCA el origen de cada nodo.
     """
     loader = XMLLoader()
     parser = XMLParser()
@@ -696,9 +691,14 @@ def parse_multiple_xml_files(files: List[Dict[str, str]]) -> Dict[str, Any]:
             
             # Agregar metadata del tipo de archivo
             document.file_type = file_type
+            
+            # MARCAR TODOS LOS NODOS DEL SDM PRINCIPAL
+            if file_type == 'main':
+                _mark_nodes_origin(document.root, 'sdm')
+            
             documents.append(document)
             
-            print(f"✅ Parseado: {file_path} (tipo: {file_type})")
+            print(f"✅ Parseado: {file_path} (tipo: {file_type}, origen: {'sdm' if file_type == 'main' else 'csf'})")
             
         except Exception as e:
             print(f"❌ Error parseando {file_info.get('path')}: {e}")
@@ -746,6 +746,7 @@ def _fuse_csf_with_main(documents: List[XMLDocument]) -> XMLDocument:
 def _merge_country_nodes(main_doc: XMLDocument, csf_doc: XMLDocument) -> XMLDocument:
     """
     Fusiona nodos <country> del CSF con el documento principal.
+    MARCA los elementos del CSF para identificar su origen.
     """
     # Buscar nodos <country> en el documento CSF
     csf_countries = _find_country_nodes(csf_doc.root)
@@ -758,9 +759,46 @@ def _merge_country_nodes(main_doc: XMLDocument, csf_doc: XMLDocument) -> XMLDocu
     
     # Para cada país del CSF, insertarlo en el documento principal
     for country_node in csf_countries:
-        _insert_country_into_main(main_doc.root, country_node, csf_doc.source_name)
+        _insert_country_into_main_with_origin(
+            main_doc.root, 
+            country_node, 
+            csf_doc.source_name,
+            'csf'  # Marcar origen
+        )
     
     return main_doc
+
+def _insert_country_into_main_with_origin(
+    main_root: XMLNode, 
+    country_node: XMLNode, 
+    source_name: str,
+    origin: str = 'csf'
+):
+    """
+    Inserta un nodo país del CSF en la estructura principal.
+    Marca con origen y país.
+    """
+    # Obtener el código del país
+    country_code = country_node.technical_id or country_node.attributes.get('id', 'UNKNOWN')
+    
+    # Verificar si ya existe un país con este código en el main
+    existing_country = _find_country_by_code(main_root, country_code)
+    
+    if existing_country:
+        print(f"  🔄 País '{country_code}' ya existe, fusionando con origen '{origin}'...")
+        _merge_country_content_by_country(existing_country, country_node, country_code, origin)
+    else:
+        print(f"  ➕ Insertando nuevo país '{country_code}' desde {source_name} (origen: {origin})")
+        # Clonar el nodo país con origen y código de país
+        cloned_country = _clone_node_with_origin(country_node, origin, country_code)
+        
+        # Ajustar jerarquía
+        cloned_country.parent = main_root
+        cloned_country.depth = main_root.depth + 1
+        cloned_country.sibling_order = len(main_root.children)
+        
+        # Agregar como hijo del root
+        main_root.children.append(cloned_country)
 
 def _find_country_nodes(node: XMLNode) -> List[XMLNode]:
     """
@@ -805,6 +843,53 @@ def _insert_country_into_main(main_root: XMLNode, country_node: XMLNode, source_
         # Agregar como hijo del root
         main_root.children.append(cloned_country)
 
+def _clone_node_with_origin(node: XMLNode, origin: str, country_code: str = None) -> XMLNode:
+    """
+    Crea una copia profunda de un nodo marcando su origen.
+    Mantiene IDs limpios: [country_][elementId]_[origin] solo si es necesario.
+    """
+    # Crear nuevo nodo con propiedades básicas
+    cloned = XMLNode(
+        tag=node.tag,
+        technical_id=node.technical_id,
+        attributes=node.attributes.copy(),
+        labels=node.labels.copy(),
+        children=[],  # Inicialmente vacío
+        parent=None,  # Se establecerá después
+        depth=node.depth,
+        sibling_order=node.sibling_order,
+        namespace=node.namespace,
+        text_content=node.text_content,
+        node_type=node.node_type
+    )
+    
+    # AGREGAR ATRIBUTO DE ORIGEN y PAÍS
+    if origin:
+        cloned.attributes['data-origin'] = origin
+    
+    if country_code:
+        cloned.attributes['data-country'] = country_code
+    
+    # NUEVO: Modificar technical_id SOLO si es necesario
+    # Mantener estructura: [country_][elementId]_[origin]
+    # Pero solo agregar _origin si no es 'sdm' (SDM se queda limpio)
+    if node.technical_id:
+        if origin == 'csf':
+            # Para CSF, mantener el ID original pero agregar atributos
+            # NO modificar technical_id aquí, solo en la fusión
+            pass
+        elif origin == 'sdm':
+            # SDM mantiene ID limpio
+            pass
+    
+    # Clonar hijos recursivamente con el mismo origen y país
+    for child in node.children:
+        cloned_child = _clone_node_with_origin(child, origin, country_code)
+        cloned_child.parent = cloned
+        cloned.children.append(cloned_child)
+    
+    return cloned
+
 def _find_country_by_code(node: XMLNode, country_code: str) -> Optional[XMLNode]:
     """
     Busca un nodo país por su código.
@@ -820,6 +905,39 @@ def _find_country_by_code(node: XMLNode, country_code: str) -> Optional[XMLNode]
             return result
     
     return None
+
+def _merge_country_content_with_origin(
+    existing_country: XMLNode, 
+    new_country: XMLNode, 
+    origin: str
+):
+    """
+    Fusiona el contenido de un país del CSF con uno existente.
+    MARCA los elementos del CSF con su origen.
+    """
+    # Para cada hris-element del nuevo país
+    for new_element in new_country.children:
+        if 'hris' in new_element.tag.lower() and 'element' in new_element.tag.lower():
+            element_id = new_element.technical_id or new_element.attributes.get('id')
+            
+            # Buscar si ya existe este elemento en el país existente
+            existing_element = None
+            for child in existing_country.children:
+                if ('hris' in child.tag.lower() and 'element' in child.tag.lower() and
+                    (child.technical_id or child.attributes.get('id')) == element_id):
+                    existing_element = child
+                    break
+            
+            if existing_element:
+                # Fusionar campos del elemento marcando origen CSF
+                _merge_element_fields_with_origin(existing_element, new_element, origin)
+            else:
+                # Agregar el nuevo elemento al país existente CON ORIGEN
+                cloned_element = _clone_node_with_origin(new_element, origin)
+                cloned_element.parent = existing_country
+                cloned_element.depth = existing_country.depth + 1
+                cloned_element.sibling_order = len(existing_country.children)
+                existing_country.children.append(cloned_element)
 
 def _merge_country_content(existing_country: XMLNode, new_country: XMLNode):
     """
@@ -900,3 +1018,215 @@ def _clone_node(node: XMLNode) -> XMLNode:
         cloned.children.append(cloned_child)
     
     return cloned
+def _merge_country_content_with_origin(
+    existing_country: XMLNode, 
+    new_country: XMLNode, 
+    origin: str
+):
+    """
+    Fusiona el contenido de un país del CSF con uno existente.
+    MARCA los elementos del CSF con su origen.
+    """
+    # Para cada hris-element del nuevo país
+    for new_element in new_country.children:
+        if 'hris' in new_element.tag.lower() and 'element' in new_element.tag.lower():
+            element_id = new_element.technical_id or new_element.attributes.get('id')
+            
+            # Buscar si ya existe este elemento en el país existente
+            existing_element = None
+            for child in existing_country.children:
+                if ('hris' in child.tag.lower() and 'element' in child.tag.lower() and
+                    (child.technical_id or child.attributes.get('id')) == element_id):
+                    existing_element = child
+                    break
+            
+            if existing_element:
+                # Fusionar campos del elemento marcando origen CSF
+                _merge_element_fields_with_origin(existing_element, new_element, origin)
+            else:
+                # Agregar el nuevo elemento al país existente CON ORIGEN
+                cloned_element = _clone_node_with_origin(new_element, origin)
+                cloned_element.parent = existing_country
+                cloned_element.depth = existing_country.depth + 1
+                cloned_element.sibling_order = len(existing_country.children)
+                existing_country.children.append(cloned_element)
+
+def _merge_element_fields_with_origin(
+    existing_element: XMLNode, 
+    new_element: XMLNode, 
+    origin: str
+):
+    """
+    Fusiona los campos (hris-field) de un elemento.
+    MARCA los campos del CSF para identificar su origen.
+    """
+    # Para cada campo del nuevo elemento
+    for new_field in new_element.children:
+        if 'hris' in new_field.tag.lower() and 'field' in new_field.tag.lower():
+            field_id = new_field.technical_id or new_field.attributes.get('id')
+            
+            # Verificar si ya existe este campo
+            field_exists = False
+            for existing_field in existing_element.children:
+                if ('hris' in existing_field.tag.lower() and 'field' in existing_field.tag.lower() and
+                    (existing_field.technical_id or existing_field.attributes.get('id')) == field_id):
+                    # Campo ya existe, marcar con origen si no está marcado
+                    if 'data-origin' not in existing_field.attributes:
+                        existing_field.attributes['data-origin'] = 'sdm'  # Asumir que el existente es SDM
+                    
+                    # Agregar también el campo CSF como duplicado pero marcado
+                    cloned_field = _clone_node_with_origin(new_field, origin)
+                    cloned_field.parent = existing_element
+                    cloned_field.depth = existing_element.depth + 1
+                    cloned_field.sibling_order = len(existing_element.children)
+                    
+                    # Modificar el ID para evitar colisión
+                    cloned_field.technical_id = f"{field_id}_{origin}"
+                    if 'id' in cloned_field.attributes:
+                        cloned_field.attributes['id'] = f"{field_id}_{origin}"
+                    
+                    existing_element.children.append(cloned_field)
+                    field_exists = True
+                    break
+            
+            if not field_exists:
+                # Agregar el nuevo campo CON ORIGEN
+                cloned_field = _clone_node_with_origin(new_field, origin)
+                cloned_field.parent = existing_element
+                cloned_field.depth = existing_element.depth + 1
+                cloned_field.sibling_order = len(existing_element.children)
+                existing_element.children.append(cloned_field)
+
+def _mark_nodes_origin(node: XMLNode, origin: str):
+    """
+    Marca recursivamente todos los nodos con su origen.
+    """
+    # Agregar atributo de origen
+    if 'data-origin' not in node.attributes:
+        node.attributes['data-origin'] = origin
+    
+    # Modificar technical_id para incluir origen si es un hris-element o field
+    if 'hris' in node.tag.lower() and node.technical_id and origin != 'sdm':
+        # Solo modificar si no es SDM (SDM se queda como está)
+        node.technical_id = f"{node.technical_id}_{origin}"
+    
+    # Marcar hijos recursivamente
+    for child in node.children:
+        _mark_nodes_origin(child, origin)
+
+def _merge_country_content_by_country(
+    existing_country: XMLNode, 
+    new_country: XMLNode, 
+    country_code: str,
+    origin: str
+):
+    """
+    Fusiona el contenido de un país del CSF con uno existente.
+    Genera IDs con estructura: [country_][fieldId]_[origin]
+    """
+    # Para cada hris-element del nuevo país
+    for new_element in new_country.children:
+        if 'hris' in new_element.tag.lower() and 'element' in new_element.tag.lower():
+            element_id = new_element.technical_id or new_element.attributes.get('id')
+            
+            # Buscar si ya existe este elemento en el país existente
+            existing_element = None
+            for child in existing_country.children:
+                if ('hris' in child.tag.lower() and 'element' in child.tag.lower() and
+                    (child.technical_id or child.attributes.get('id')) == element_id):
+                    existing_element = child
+                    break
+            
+            if existing_element:
+                # Fusionar campos del elemento
+                _merge_element_fields_by_country(existing_element, new_element, country_code, origin)
+            else:
+                # Agregar el nuevo elemento al país existente
+                cloned_element = _clone_node_with_origin(new_element, origin, country_code)
+                cloned_element.parent = existing_country
+                cloned_element.depth = existing_country.depth + 1
+                cloned_element.sibling_order = len(existing_country.children)
+                
+                # NUEVO: Generar ID con país para elementos CSF
+                if origin == 'csf':
+                    _generate_country_based_ids(cloned_element, country_code, origin)
+                
+                existing_country.children.append(cloned_element)
+
+def _merge_element_fields_by_country(
+    existing_element: XMLNode, 
+    new_element: XMLNode, 
+    country_code: str,
+    origin: str
+):
+    """
+    Fusiona los campos (hris-field) de un elemento por país.
+    """
+    # Para cada campo del nuevo elemento
+    for new_field in new_element.children:
+        if 'hris' in new_field.tag.lower() and 'field' in new_field.tag.lower():
+            field_id = new_field.technical_id or new_field.attributes.get('id')
+            
+            # Verificar si ya existe este campo
+            existing_field_found = False
+            for existing_field in existing_element.children:
+                if ('hris' in existing_field.tag.lower() and 'field' in existing_field.tag.lower() and
+                    (existing_field.technical_id or existing_field.attributes.get('id')) == field_id):
+                    
+                    # Marcar campo existente con origen si no tiene
+                    if 'data-origin' not in existing_field.attributes:
+                        existing_field.attributes['data-origin'] = 'sdm'
+                    
+                    existing_field_found = True
+                    break
+            
+            if not existing_field_found:
+                # Agregar el nuevo campo
+                cloned_field = _clone_node_with_origin(new_field, origin, country_code)
+                cloned_field.parent = existing_element
+                cloned_field.depth = existing_element.depth + 1
+                cloned_field.sibling_order = len(existing_element.children)
+                
+                # NUEVO: Generar ID con país para campos CSF
+                if origin == 'csf':
+                    _generate_country_based_ids(cloned_field, country_code, origin)
+                
+                existing_element.children.append(cloned_field)
+def _generate_country_based_ids(node: XMLNode, country_code: str, origin: str):
+    """
+    Genera IDs basados en país para elementos CSF.
+    Estructura: [country_][elementId]_[origin] solo si origin != 'sdm'
+    """
+    if origin == 'sdm':
+        return  # SDM mantiene IDs limpios
+    
+    current_id = node.technical_id or node.attributes.get('id', '')
+    
+    if not current_id:
+        return
+    
+    # NUEVA ESTRATEGIA: 
+    # 1. Elementos CSF mantienen su ID original en technical_id
+    # 2. Agregamos un atributo especial con el ID completo
+    # 3. El golden generator usará este atributo especial
+    
+    # Guardar ID original
+    node.attributes['data-original-id'] = current_id
+    
+    # Generar ID completo: country_elementId_origin (sin origin si es sdm)
+    if origin == 'csf':
+        full_id = f"{country_code}_{current_id}_{origin}"
+    else:
+        full_id = f"{country_code}_{current_id}"
+    
+    # Agregar atributo con ID completo
+    node.attributes['data-full-id'] = full_id
+    
+    # También modificar technical_id para consistencia
+    node.technical_id = full_id
+    
+    # Aplicar recursivamente a hijos si es un elemento
+    if 'hris' in node.tag.lower() and 'element' in node.tag.lower():
+        for child in node.children:
+            if 'hris' in child.tag.lower() and 'field' in child.tag.lower():
+                _generate_country_based_ids(child, country_code, origin)

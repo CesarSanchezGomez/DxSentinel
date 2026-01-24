@@ -5,7 +5,7 @@ from datetime import datetime
 
 # ================= CONFIGURACIÓN =================
 LANGUAGE_CODE = "es-MEX"  # Opciones: "es", "es-mx", "en", "en-us", "fr", etc.
-COUNTRY_CODE = ""    # Código de país específico (ej: "MEX", "USA", "BRA")
+COUNTRY_CODE = "MEX"    # Código de país específico (ej: "MEX", "USA", "BRA")
                         # Dejar como None o "" para incluir todos los países
 # =================================================
 
@@ -19,6 +19,97 @@ from generators.golden_record import GoldenRecordGenerator
 def get_absolute_path(relative_path: str) -> Path:
     """Convierte ruta relativa a absoluta desde la raíz del proyecto."""
     return PROJECT_ROOT / relative_path
+
+
+def debug_print_structure(node: dict, level: int = 0, max_depth: int = 3, print_all: bool = False):
+    """Función de debug para imprimir la estructura del árbol XML."""
+    indent = "  " * level
+    
+    if level > max_depth:
+        if print_all:
+            print(f"{indent}... (profundidad máxima: {max_depth})")
+        return
+    
+    tag = node.get("tag", "")
+    elem_id = node.get("technical_id") or node.get("id", "")
+    attributes = node.get("attributes", {}).get("raw", {})
+    data_origin = attributes.get("data-origin", "")
+    data_country = attributes.get("data-country", "")
+    
+    # Solo imprimir elementos relevantes para el análisis
+    if print_all or tag in ["hris-element", "country", "XMLDocument"] or data_origin:
+        origin_info = f" [origin={data_origin}]" if data_origin else ""
+        country_info = f" [country={data_country}]" if data_country else ""
+        print(f"{indent}├─ {tag}: {elem_id}{origin_info}{country_info}")
+    
+    # Continuar con los hijos
+    for child in node.get("children", []):
+        debug_print_structure(child, level + 1, max_depth, print_all)
+
+
+def print_parsed_model_summary(parsed_model: dict):
+    """Imprime un resumen del modelo parseado."""
+    structure = parsed_model.get("structure", {})
+    
+    print("\n🔍 RESUMEN DEL MODELO PARSEADO:")
+    print("-" * 40)
+    
+    # Contar elementos
+    def count_elements(node: dict, counts: dict):
+        tag = node.get("tag", "")
+        if tag:
+            if tag not in counts:
+                counts[tag] = 0
+            counts[tag] += 1
+        
+        for child in node.get("children", []):
+            count_elements(child, counts)
+    
+    counts = {}
+    count_elements(structure, counts)
+    
+    for tag, count in sorted(counts.items()):
+        print(f"  {tag}: {count}")
+    
+    # Elementos con data-origin
+    def find_elements_with_origin(node: dict, results: list):
+        attributes = node.get("attributes", {}).get("raw", {})
+        origin = attributes.get("data-origin")
+        if origin:
+            results.append({
+                "tag": node.get("tag", ""),
+                "id": node.get("technical_id") or node.get("id", ""),
+                "origin": origin,
+                "country": attributes.get("data-country", "")
+            })
+        
+        for child in node.get("children", []):
+            find_elements_with_origin(child, results)
+    
+    origins = []
+    find_elements_with_origin(structure, origins)
+    
+    if origins:
+        print("\n  🎯 ELEMENTOS CON DATA-ORIGIN:")
+        for item in origins:
+            country_info = f" (country={item['country']})" if item['country'] else ""
+            print(f"    • {item['tag']}: {item['id']} [origin={item['origin']}]{country_info}")
+    
+    # Países encontrados
+    def find_countries(node: dict, countries: set):
+        if node.get("tag", "").lower() == "country":
+            country_code = node.get("technical_id") or node.get("id", "")
+            if country_code:
+                countries.add(country_code)
+        
+        for child in node.get("children", []):
+            find_countries(child, countries)
+    
+    countries = set()
+    find_countries(structure, countries)
+    
+    if countries:
+        print(f"\n  🌍 PAÍSES ENCONTRADOS: {', '.join(sorted(countries))}")
 
 
 def main():
@@ -88,6 +179,14 @@ def main():
             
             print("   ✅ SDM parseado correctamente")
             
+            # Mostrar resumen del modelo parseado
+            print_parsed_model_summary(parsed_model)
+            
+            # DEBUG: Mostrar estructura detallada (opcional - descomentar si es necesario)
+            # print(f"\n   🔍 Estructura detallada (primeros 3 niveles):")
+            # structure = parsed_model.get("structure", {})
+            # debug_print_structure(structure, max_depth=3, print_all=True)
+            
         except Exception as parse_error:
             print(f"   ❌ Error parseando XML: {parse_error}")
             raise
@@ -102,9 +201,12 @@ def main():
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         
         # Pasar el código de país al generador
+        # IMPORTANTE: Convertir string vacío a None para procesamiento correcto
+        target_country = COUNTRY_CODE if COUNTRY_CODE else None
+        
         generator = GoldenRecordGenerator(
             output_dir=str(OUTPUT_DIR),
-            target_country=COUNTRY_CODE if COUNTRY_CODE else None
+            target_country=target_country
         )
 
         start_time = datetime.now()
@@ -125,14 +227,14 @@ def main():
             # Leer estadísticas del archivo
             with open(template_path, 'r', encoding='utf-8-sig') as f:
                 lines = f.readlines()
-                if lines:
+                if lines and len(lines) >= 1:
                     header_fields = lines[0].strip().split(',')
                     field_count = len(header_fields) if header_fields[0] else 0
             
             print(f"   📄 Archivo: {template_path.name}")
             print(f"   📁 Ruta: {template_path}")
             print(f"   📊 Tamaño: {file_size / 1024:.1f} KB")
-            print(f"   🔢 Campos: {field_count}")
+            print(f"   🔢 Campos totales: {field_count}")
             print(f"   ⏱️  Tiempo: {(end_time - start_time).total_seconds():.2f}s")
             
             # Mostrar algunos campos específicos si hay filtro por país
@@ -140,12 +242,35 @@ def main():
                 print(f"\n   🎯 Campos específicos de {COUNTRY_CODE}:")
                 country_fields = [f for f in header_fields if COUNTRY_CODE in f]
                 if country_fields:
-                    for i, field in enumerate(country_fields[:3]):  # Mostrar primeros 3
-                        print(f"     • {field}")
-                    if len(country_fields) > 3:
-                        print(f"     ... y {len(country_fields) - 3} más")
+                    print(f"     • Total: {len(country_fields)} campos")
+                    for i, field in enumerate(country_fields[:5]):  # Mostrar primeros 5
+                        print(f"       - {field}")
+                    if len(country_fields) > 5:
+                        print(f"       ... y {len(country_fields) - 5} más")
                 else:
-                    print(f"     ℹ️  No se encontraron campos específicos")
+                    print(f"     ℹ️  No se encontraron campos específicos de {COUNTRY_CODE}")
+            
+            # Mostrar campos SDM globales
+            if field_count > 0:
+                print(f"\n   🌍 Campos SDM globales:")
+                sdm_fields = [f for f in header_fields if COUNTRY_CODE not in f] if COUNTRY_CODE else header_fields
+                global_fields = [f for f in sdm_fields if not any(c in f for c in ["_csf", "CSF"])]
+                if global_fields:
+                    print(f"     • Total: {len(global_fields)} campos")
+                    for i, field in enumerate(global_fields[:5]):  # Mostrar primeros 5
+                        print(f"       - {field}")
+                    if len(global_fields) > 5:
+                        print(f"       ... y {len(global_fields) - 5} más")
+                
+                # Mostrar campos CSF si existen
+                csf_fields = [f for f in header_fields if "_csf" in f or "CSF" in f]
+                if csf_fields:
+                    print(f"\n   🔧 Campos CSF:")
+                    print(f"     • Total: {len(csf_fields)} campos")
+                    for i, field in enumerate(csf_fields[:3]):  # Mostrar primeros 3
+                        print(f"       - {field}")
+                    if len(csf_fields) > 3:
+                        print(f"       ... y {len(csf_fields) - 3} más")
         else:
             print(f"   ❌ ERROR: Archivo no generado")
 
@@ -165,35 +290,6 @@ def main():
         sys.exit(1)
 
 
-def generate_multiple_countries():
-    """Función opcional para generar golden records para múltiples países."""
-    print("\n" + "=" * 60)
-    print("GENERACIÓN PARA MÚLTIPLES PAÍSES")
-    print("=" * 60)
-    
-    countries = ["MEX", "USA", "BRA", "ARG", "COL"]  # Ejemplo de países
-    language = "es-MX"
-    
-    for country in countries:
-        print(f"\n▶️  Generando para {country}...")
-        
-        # Configurar globalmente (para este ejemplo)
-        global COUNTRY_CODE
-        COUNTRY_CODE = country
-        
-        # Ejecutar main (simplificado)
-        try:
-            # Similar al código de main pero solo la parte de generación
-            pass
-        except Exception as e:
-            print(f"   ❌ Error para {country}: {e}")
-    
-    print(f"\n✅ Generación múltiple completada")
-
-
 if __name__ == "__main__":
     # Ejecutar generación principal
     main()
-    
-    # Opcional: Descomentar para generar para múltiples países
-    # generate_multiple_countries()

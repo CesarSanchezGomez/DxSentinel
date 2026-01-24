@@ -133,3 +133,85 @@ class XMLDocument:
             'encoding': self.encoding,
             'root': self.root.to_dict()
         }
+
+    def get_origin(self) -> str:
+        """Obtiene el origen del nodo (sdm, csf, mixed, unknown)."""
+        return self.attributes.get('data-origin', 'unknown')
+    
+    def is_csf_element(self) -> bool:
+        """Verifica si el elemento es de CSF."""
+        origin = self.get_origin()
+        return origin == 'csf' or (self.technical_id and self.technical_id.endswith('_csf'))
+    
+    def is_sdm_element(self) -> bool:
+        """Verifica si el elemento es de SDM principal."""
+        origin = self.get_origin()
+        return origin == 'sdm' or (self.technical_id and not self.technical_id.endswith('_csf'))
+    
+    def get_clean_id(self) -> str:
+        """Obtiene el ID limpio (sin sufijo de origen)."""
+        if not self.technical_id:
+            return ''
+        
+        # Remover sufijos de origen
+        clean_id = self.technical_id
+        for suffix in ['_csf', '_sdm', '_mixed']:
+            if clean_id.endswith(suffix):
+                clean_id = clean_id[:-len(suffix)]
+                break
+        
+        return clean_id
+    def get_country_based_id(self, include_origin: bool = True) -> str:
+        """
+        Obtiene el ID basado en país según la nueva convención.
+        
+        Args:
+            include_origin: Si True, incluye _csf/_sdm suffix
+            
+        Returns:
+            ID en formato: [country_][cleanId]_[origin] o [country_][cleanId]
+        """
+        origin = self.get_origin()
+        country = self.attributes.get('data-country')
+        clean_id = self.get_clean_id()
+        
+        if not clean_id:
+            return ''
+        
+        # Si tenemos atributo data-full-id, usarlo
+        if 'data-full-id' in self.attributes:
+            full_id = self.attributes['data-full-id']
+            if not include_origin and full_id.endswith('_csf'):
+                return full_id[:-4]  # Quitar _csf
+            return full_id
+        
+        # Construir ID manualmente
+        parts = []
+        
+        if country and origin == 'csf':
+            parts.append(country)
+        
+        parts.append(clean_id)
+        
+        if include_origin and origin != 'sdm':
+            parts.append(origin)
+        
+        return '_'.join(parts)
+    
+    def get_clean_field_id(self) -> str:
+        """
+        Obtiene ID limpio para campos: sin _csf suffix.
+        Para CSF: MEX_homeAddress_address1
+        Para SDM: homeAddress_address1
+        """
+        origin = self.get_origin()
+        country = self.attributes.get('data-country')
+        clean_id = self.get_clean_id()
+        
+        if not clean_id:
+            return ''
+        
+        if country and origin == 'csf':
+            return f"{country}_{clean_id}"
+        
+        return clean_id

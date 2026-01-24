@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 class GoldenRecordFieldFinder:
@@ -32,12 +32,13 @@ class GoldenRecordFieldFinder:
         return fields
 
     @staticmethod
-    def find_all_elements(node: Dict) -> List[Dict]:
+    def find_all_elements(node: Dict, origin_filter: Optional[str] = None) -> List[Dict]:
         """
-        Finds all hris-elements recursively.
+        Finds all hris-elements recursively, optionally filtered by data-origin.
 
         Args:
             node: Model node
+            origin_filter: Filter by data-origin attribute (e.g., "sdm", "csf")
 
         Returns:
             List of hris-element nodes
@@ -45,9 +46,30 @@ class GoldenRecordFieldFinder:
         elements = []
 
         if node.get("tag") == "hris-element":
-            elements.append(node)
+            # Check origin filter if specified
+            if origin_filter:
+                attributes = node.get("attributes", {}).get("raw", {})
+                element_origin = attributes.get("data-origin", "")
+                if element_origin == origin_filter:
+                    elements.append(node)
+            else:
+                elements.append(node)
 
         for child in node.get("children", []):
-            elements.extend(GoldenRecordFieldFinder.find_all_elements(child))
+            elements.extend(GoldenRecordFieldFinder.find_all_elements(child, origin_filter))
 
         return elements
+
+    @staticmethod
+    def get_element_origin(element_node: Dict) -> str:
+        """
+        Gets the data-origin of an element.
+        
+        Args:
+            element_node: hris-element node
+            
+        Returns:
+            Origin string (e.g., "sdm", "csf", or empty string)
+        """
+        attributes = element_node.get("attributes", {}).get("raw", {})
+        return attributes.get("data-origin", "")
