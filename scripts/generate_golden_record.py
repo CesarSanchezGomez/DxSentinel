@@ -5,7 +5,7 @@ from datetime import datetime
 
 # ================= CONFIGURACIÓN =================
 LANGUAGE_CODE = "es-MEX"  # Opciones: "es", "es-mx", "en", "en-us", "fr", etc.
-COUNTRY_CODE = ""    # Código de país específico (ej: "MEX", "USA", "BRA")
+COUNTRY_CODE = "MEX"    # Código de país específico (ej: "MEX", "USA", "BRA")
                         # Dejar como None o "" para incluir todos los países
 # =================================================
 

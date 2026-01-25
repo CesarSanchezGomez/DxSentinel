@@ -1,9 +1,4 @@
-"""
-Excepciones específicas para el módulo de parseo XML.
-Mensajes claros para debugging multi-instancia.
-"""
-
-from typing import Optional, Dict, Any
+from typing import Optional
 
 
 class XMLParsingError(Exception):
@@ -47,7 +42,7 @@ class XMLMetadataError(XMLParsingError):
 
 
 class UnsupportedXMLFeatureError(XMLParsingError):
-    """Error cuando se encuentra una característica XML no soportada (por diseño)."""
+    """Error cuando se encuentra una característica XML no soportada."""
     
     def __init__(self,
                  feature: str,

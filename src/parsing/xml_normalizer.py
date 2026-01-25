@@ -1,24 +1,15 @@
-"""
-Normaliza resultados sin perder información.
-Conserva TODOS los idiomas, normaliza tipos solo si es inequívoco.
-"""
 from typing import Dict, List, Optional, Any, Union
-import logging
 from datetime import datetime
 import re
 
 from .xml_elements import XMLNode, XMLDocument
 
-logger = logging.getLogger(__name__)
-
 
 class XMLNormalizer:
     """
     Normalizador que conserva toda la metadata.
-    No descarta información "irrelevante".
     """
 
-    # Patrones para normalización de tipos (solo cuando es inequívoco)
     BOOLEAN_PATTERNS = {
         'true': True,
         'false': False,
@@ -37,12 +28,6 @@ class XMLNormalizer:
     def normalize_document(self, document: XMLDocument) -> Dict[str, Any]:
         """
         Normaliza un documento completo a un formato estructurado.
-        
-        Args:
-            document: Documento XML parseado
-            
-        Returns:
-            Dict normalizado con toda la metadata
         """
         normalized = {
             'metadata': self._normalize_document_metadata(document),
@@ -65,7 +50,6 @@ class XMLNormalizer:
     def _normalize_node(self, node: XMLNode) -> Dict[str, Any]:
         """
         Normaliza un nodo recursivamente.
-        Conserva toda la información original.
         """
         normalized = {
             'tag': node.tag,
@@ -75,20 +59,12 @@ class XMLNormalizer:
             'sibling_order': node.sibling_order,
             'namespace': node.namespace,
             'text_content': node.text_content,
-
-            # Atributos: conservar original + versión normalizada si aplica
             'attributes': {
                 'raw': node.attributes,
                 'normalized': self._normalize_attributes(node.attributes)
             },
-
-            # Labels: conservar TODOS los idiomas
             'labels': node.labels,
-
-            # Hijos (recursivo)
             'children': [self._normalize_node(child) for child in node.children],
-
-            # Metadata adicional
             'has_children': len(node.children) > 0,
             'has_labels': len(node.labels) > 0,
             'has_attributes': len(node.attributes) > 0
@@ -99,7 +75,6 @@ class XMLNormalizer:
     def _normalize_attributes(self, attributes: Dict[str, str]) -> Dict[str, Any]:
         """
         Normaliza atributos cuando el tipo es inequívoco.
-        Siempre conserva el valor original también.
         """
         normalized = {}
 
@@ -108,11 +83,8 @@ class XMLNormalizer:
                 normalized[key] = None
                 continue
 
-            # Intentar normalizar tipos básicos
             normalized_value = self._normalize_value(value)
 
-            # Solo usar valor normalizado si es diferente al original
-            # y si la normalización es confiable
             if normalized_value != value and self._is_normalization_reliable(value):
                 normalized[key] = {
                     'raw': value,
@@ -129,51 +101,40 @@ class XMLNormalizer:
         Normaliza un valor string a tipo más específico cuando es inequívoco.
         """
         value_str = str(value).strip()
-
-        # Booleanos (solo patrones muy claros)
         lower_val = value_str.lower()
+
         if lower_val in self.BOOLEAN_PATTERNS:
             return self.BOOLEAN_PATTERNS[lower_val]
 
-        # Números enteros
         if value_str.isdigit() or (value_str.startswith('-') and value_str[1:].isdigit()):
             try:
                 int_val = int(value_str)
-                # Verificar que no haya pérdida al convertir de vuelta
                 if str(int_val) == value_str:
                     return int_val
             except (ValueError, OverflowError):
                 pass
 
-        # Números decimales
         if self.NUMBER_PATTERN.match(value_str):
             try:
                 float_val = float(value_str)
-                # Para decimales, ser más cuidadoso
                 if '.' in value_str:
                     return float_val
-                # Para enteros representados como float, mantener como int si es posible
                 elif float_val.is_integer():
                     return int(float_val)
             except (ValueError, OverflowError):
                 pass
 
-        # Fechas ISO (solo formato muy claro)
         if self.ISO_DATE_PATTERN.match(value_str):
             try:
-                # Intentar parsear como datetime
                 from datetime import datetime
-                # Formato simplificado - en producción usar dateutil o similar
                 if 'T' in value_str:
                     dt = datetime.fromisoformat(value_str.replace('Z', '+00:00'))
                     return dt.isoformat()
                 else:
-                    # Solo fecha
                     return value_str
             except (ValueError, TypeError):
                 pass
 
-        # Valor original por defecto
         return value
 
     def _is_normalization_reliable(self, value: str) -> bool:
@@ -182,27 +143,22 @@ class XMLNormalizer:
         """
         value_str = str(value).strip()
 
-        # Booleanos: solo los patrones definidos
         if value_str.lower() in self.BOOLEAN_PATTERNS:
             return True
 
-        # Números: verificar que la conversión ida/vuelta sea idéntica
         if value_str.isdigit():
             try:
                 return str(int(value_str)) == value_str
             except (ValueError, OverflowError):
                 return False
 
-        # Números decimales
         if self.NUMBER_PATTERN.match(value_str):
             try:
                 float_val = float(value_str)
-                # Para mantener precisión, comparar representaciones
                 return str(float_val) == value_str or f"{float_val:.{len(value_str.split('.')[1])}f}" == value_str
             except (ValueError, OverflowError, IndexError):
                 return False
 
-        # Fechas ISO
         if self.ISO_DATE_PATTERN.match(value_str):
             return True
 
@@ -221,7 +177,7 @@ class XMLNormalizer:
 
     def _count_nodes(self, node: XMLNode) -> int:
         """Cuenta el total de nodos."""
-        count = 1  # El nodo actual
+        count = 1
 
         for child in node.children:
             count += self._count_nodes(child)
