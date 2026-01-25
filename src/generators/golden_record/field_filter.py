@@ -15,6 +15,8 @@ class FieldFilter:
         self.date_patterns = [re.compile(p, re.IGNORECASE) for p in self.DATE_PATTERNS]
         self.custom_patterns = [re.compile(p, re.IGNORECASE) for p in self.CUSTOM_PATTERNS]
 
+
+
     def filter_field(self, field_node: Dict) -> Tuple[bool, Optional[str]]:
         """
         Determines if a field should be included in Golden Record.
@@ -27,12 +29,18 @@ class FieldFilter:
         """
         try:
             attributes = field_node.get("attributes", {}).get("raw", {})
+            field_id = field_node.get("technical_id") or field_node.get("id", "")
 
             visibility = attributes.get("visibility", "").lower()
             if visibility == "none":
                 return False, "visibility='none'"
+            
+            if self._is_internal_field(field_id, attributes):
+                return False, "campo técnico interno"
 
             return True, None
+        
+            
 
         except Exception as e:
             raise FieldFilterError(f"Error filtering field: {str(e)}") from e
@@ -85,3 +93,20 @@ class FieldFilter:
                 classified["date"] +
                 classified["other"] +
                 classified["custom"])
+
+    def _is_internal_field(self, field_id: str, attributes: Dict) -> bool:
+        """Determina si un campo es técnico interno."""
+        # Campos que solo son para sistema
+        internal_indicators = [
+            "attachment","calculated", "sys"  
+        ]
+
+        field_id_lower = field_id.lower()
+        for indicator in internal_indicators:
+            if indicator in field_id_lower:
+                return True
+
+        field_type = attributes.get("type", "").lower()
+        if field_type in ["attachment", "calculated"]:
+            return True
+        return False
