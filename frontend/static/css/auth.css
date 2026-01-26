@@ -1,0 +1,242 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Open Sans', helvetica, arial, sans-serif;
+    background: linear-gradient(135deg, #393939 0%, #282829 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(183, 196, 11, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(183, 196, 11, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.login-container,
+.callback-container {
+    background: #ffffff;
+    padding: 3rem 2.5rem;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    border-top: 4px solid #b7c40b;
+}
+
+.logo {
+    width: 220px;
+    margin-bottom: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+h1 {
+    color: #282829;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    color: #888888;
+    margin-bottom: 2.5rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+}
+
+.google-btn {
+    background: #ffffff;
+    border: 2px solid #dadfe4;
+    padding: 16px 28px;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    width: 100%;
+    color: #393939;
+    text-decoration: none;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.google-btn:hover {
+    background: #f8f9fa;
+    border-color: #b7c40b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(183, 196, 11, 0.25);
+}
+
+.google-btn:active {
+    transform: translateY(0);
+}
+
+.google-icon {
+    width: 22px;
+    height: 22px;
+}
+
+.error-message {
+    background: #f8f9fa;
+    color: #393939;
+    padding: 14px;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    font-size: 14px;
+    border-left: 4px solid #f45a4a;
+    text-align: left;
+}
+
+.error-message.show {
+    display: block;
+}
+
+.info-text {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #888888;
+    line-height: 1.6;
+}
+
+.info-text strong {
+    color: #b7c40b;
+    font-weight: 700;
+}
+
+.divider {
+    margin: 2.5rem 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #dadfe4, transparent);
+}
+
+.feature-list {
+    text-align: left;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #b7c40b;
+}
+
+.feature-list h3 {
+    font-size: 0.95rem;
+    color: #282829;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.feature-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-list li {
+    padding: 0.6rem 0;
+    font-size: 0.9rem;
+    color: #393939;
+    line-height: 1.5;
+}
+
+.feature-list li:before {
+    content: "✓";
+    color: #82C016;
+    font-weight: bold;
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+
+.spinner {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 1.5rem;
+    border: 4px solid #E9E9E9;
+    border-top: 4px solid #b7c40b;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.retry-btn {
+    margin-top: 1rem;
+    background: #b7c40b;
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.retry-btn:hover {
+    background: #9aa909;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(183, 196, 11, 0.3);
+}
+
+@media (max-width: 500px) {
+    .login-container,
+    .callback-container {
+        padding: 2.5rem 2rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    .logo {
+        width: 180px;
+    }
+
+    .google-btn {
+        padding: 14px 20px;
+        font-size: 14px;
+    }
+
+    .feature-list {
+        padding: 1.2rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .login-container,
+    .callback-container {
+        padding: 2rem 1.5rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados - DxSentinel{% endblock %}
+
+{% block content %}
+<h1>Archivos Procesados</h1>
+<div id="resultContainer">
+    <p>Cargando...</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/result.js"></script>
+{% endblock %}

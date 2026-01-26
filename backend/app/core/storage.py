@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional
-import shutil
 from .config import settings
 
 

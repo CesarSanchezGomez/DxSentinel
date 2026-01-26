@@ -1,77 +1,157 @@
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// frontend/static/js/upload.js
+(function() {
+    'use strict';
 
+    const uploadForm = document.getElementById('uploadForm');
     const statusDiv = document.getElementById('status');
     const resultDiv = document.getElementById('result');
 
-    statusDiv.innerHTML = 'Uploading files...';
+    // Utility: Manejo de errores de autenticación
+    function handleAuthError(response) {
+        if (response.status === 401 || response.status === 403) {
+            window.location.href = '/auth/login';
+            return true;
+        }
+        return false;
+    }
 
-    const mainFile = document.getElementById('mainFile').files[0];
-    const csfFile = document.getElementById('csfFile').files[0];
-    const languageCode = document.getElementById('languageCode').value;
-    const countryCode = document.getElementById('countryCode').value;
+    // Utility: Mostrar estado
+    function setStatus(message, type = 'info') {
+        const colors = {
+            info: '#0066cc',
+            success: 'green',
+            error: 'red'
+        };
+        statusDiv.innerHTML = `<span style="color: ${colors[type]};">${message}</span>`;
+    }
 
-    try {
-        const mainFormData = new FormData();
-        mainFormData.append('file', mainFile);
+    // Subir un archivo
+    async function uploadFile(file, description) {
+        console.log(`Uploading ${description}:`, file.name);
 
-        const mainResponse = await fetch('/api/v1/upload/', {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/v1/upload/', {
             method: 'POST',
-            body: mainFormData
+            body: formData
         });
 
-        const mainResult = await mainResponse.json();
-
-        if (!mainResult.success) {
-            throw new Error('Main file upload failed');
+        if (handleAuthError(response)) {
+            throw new Error('Session expired');
         }
 
-        let csfFileId = null;
-        if (csfFile) {
-            const csfFormData = new FormData();
-            csfFormData.append('file', csfFile);
-
-            const csfResponse = await fetch('/api/v1/upload/', {
-                method: 'POST',
-                body: csfFormData
-            });
-
-            const csfResult = await csfResponse.json();
-            csfFileId = csfResult.file_id;
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `${description} upload failed`);
         }
 
-        statusDiv.innerHTML = 'Processing...';
+        const result = await response.json();
 
-        const processResponse = await fetch('/api/v1/process/', {
+        if (!result.success) {
+            throw new Error(result.message || `${description} upload failed`);
+        }
+
+        console.log(`${description} uploaded:`, result);
+        return result.file_id;
+    }
+
+    // Procesar archivos
+    async function processFiles(mainFileId, csfFileId, languageCode, countryCode) {
+        console.log('Starting processing with:', {
+            main_file_id: mainFileId,
+            csf_file_id: csfFileId,
+            language_code: languageCode,
+            country_code: countryCode || null
+        });
+
+        const response = await fetch('/api/v1/process/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                main_file_id: mainResult.file_id,
+                main_file_id: mainFileId,
                 csf_file_id: csfFileId,
                 language_code: languageCode,
                 country_code: countryCode || null
             })
         });
 
-        const processResult = await processResponse.json();
-
-        if (processResult.success) {
-            statusDiv.innerHTML = 'Success!';
-            resultDiv.innerHTML = `
-                <h3>Results:</h3>
-                <p>Fields: ${processResult.field_count}</p>
-                <p>Time: ${processResult.processing_time.toFixed(2)}s</p>
-                <a href="/api/v1/process/download/${processResult.output_file}" download>
-                    Download CSV
-                </a>
-            `;
-        } else {
-            throw new Error(processResult.message);
+        if (handleAuthError(response)) {
+            throw new Error('Session expired');
         }
 
-    } catch (error) {
-        statusDiv.innerHTML = `Error: ${error.message}`;
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Processing failed');
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Processing failed');
+        }
+
+        console.log('Process result:', result);
+        return result;
     }
-});
+
+    // Mostrar resultados
+    function displayResults(processResult) {
+        setStatus('Success!', 'success');
+        resultDiv.innerHTML = `
+            <h3>Results:</h3>
+            <p><strong>Fields:</strong> ${processResult.field_count}</p>
+            <p><strong>Time:</strong> ${processResult.processing_time.toFixed(2)}s</p>
+            <a href="/api/v1/process/download/${processResult.output_file}" download>
+                Download CSV
+            </a>
+        `;
+    }
+
+    // Handler principal del formulario
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        resultDiv.innerHTML = '';
+
+        const mainFile = document.getElementById('mainFile').files[0];
+        const csfFile = document.getElementById('csfFile').files[0];
+        const languageCode = document.getElementById('languageCode').value;
+        const countryCode = document.getElementById('countryCode').value;
+
+        try {
+            // 1. Subir archivo principal
+            setStatus('Uploading main file...');
+            const mainFileId = await uploadFile(mainFile, 'Main file');
+
+            // 2. Subir archivo CSF (si existe)
+            let csfFileId = null;
+            if (csfFile) {
+                setStatus('Uploading CSF file...');
+                csfFileId = await uploadFile(csfFile, 'CSF file');
+            }
+
+            // 3. Procesar archivos
+            setStatus('Processing files...');
+            const processResult = await processFiles(
+                mainFileId,
+                csfFileId,
+                languageCode,
+                countryCode
+            );
+
+            // 4. Mostrar resultados
+            displayResults(processResult);
+
+        } catch (error) {
+            console.error('Error:', error);
+
+            if (error.message !== 'Session expired') {
+                setStatus(`Error: ${error.message}`, 'error');
+                resultDiv.innerHTML = '';
+            }
+        }
+    });
+})();

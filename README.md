@@ -22,6 +22,12 @@ DxSentinel/
 │   │   │           ├── process.py
 │   │   │           └── health.py
 │   │   │
+│   │   ├── auth/
+│   │   │   ├── __init__.py
+│   │   │   ├── dependencies.py
+│   │   │   ├── router.py
+│   │   │   └── supabase_client.py
+│   │   │
 │   │   ├── core/
 │   │   │   ├── __init__.py
 │   │   │   ├── config.py
@@ -64,15 +70,26 @@ DxSentinel/
 │
 ├── frontend/
 │   ├── static/
-│   │   └── js/
-│   │       ├── upload.js
-│   │       └── process.js
+│   │   ├── js/
+│   │   │   ├── upload.js
+│   │   │   ├── auth-callback.js
+│   │   │   ├── auth-login.js
+│   │   │   └── process.js
+│   │   │
+│   │   ├── css/
+│   │   │   └── styles.css
+│   │   │
+│   │   └── images/
+│   │       ├── favicon.ico
+│   │       ├── logo-dxgrow-300x180.png
+│   │       └── logo-dxgrow-inverted-300-180.png
 │   │
 │   └── templates/
 │       ├── base.html
 │       ├── index.html
 │       ├── upload.html
-│       └── result.html
+│       ├── login.html
+│       └── callback.html
 │
 ├── .env
 ├── requirements.txt
