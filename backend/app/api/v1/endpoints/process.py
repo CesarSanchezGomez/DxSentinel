@@ -51,7 +51,6 @@ async def process_files(
     try:
         logger.info(f"Starting parser service...")
 
-        # Procesar archivos
         result = ParserService.process_files(
             main_file_path=str(main_file_path),
             csf_file_path=str(csf_file_path) if csf_file_path else None,
@@ -66,6 +65,7 @@ async def process_files(
             success=True,
             message="Procesamiento completado exitosamente",
             output_file=Path(result["output_file"]).name,
+            metadata_file=Path(result["metadata_file"]).name,  # NUEVO
             field_count=result["field_count"],
             processing_time=result["processing_time"]
         )

@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 import csv
 from .element_processor import ElementProcessor
 from .language_resolver import GoldenRecordLanguageResolver
+from .metadata_generator import MetadataGenerator  # NUEVO
 from .exceptions import GoldenRecordError
 
 
@@ -9,28 +10,14 @@ class CSVGenerator:
     """Generates golden_record_template.csv file."""
 
     def __init__(self, target_country: Optional[str] = None):
-        """
-        Args:
-            target_country: Specific country code to include (e.g., "MEX").
-                           If None, includes all countries.
-        """
         self.processor = ElementProcessor(target_country=target_country)
         self.language_resolver = GoldenRecordLanguageResolver()
+        self.metadata_gen = MetadataGenerator()  # NUEVO
         self.target_country = target_country
 
     def generate_template_csv(self, parsed_model: Dict, output_path: str,
                               language_code: str) -> str:
-        """
-        Generates CSV template with translated labels.
-
-        Args:
-            parsed_model: Parsed SDM model
-            output_path: Output file path
-            language_code: Language code for labels
-
-        Returns:
-            Path to generated file
-        """
+        """Generates CSV template with translated labels."""
         try:
             processed_data = self.processor.process_model(parsed_model)
             elements = processed_data.get("elements", [])
@@ -49,6 +36,7 @@ class CSVGenerator:
 
             translated_labels = self._get_translated_labels(columns, language_code)
 
+            # Generar CSV
             with open(output_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
                 writer = csv.writer(csvfile)
 
@@ -60,6 +48,15 @@ class CSVGenerator:
                     for col in columns
                 ]
                 writer.writerow(descriptive_header)
+
+            # NUEVO: Generar metadata
+            metadata = self.metadata_gen.generate_metadata(processed_data, columns)
+
+            # Guardar metadata junto al CSV
+            from pathlib import Path
+            csv_path = Path(output_path)
+            metadata_path = csv_path.parent / f"{csv_path.stem}_metadata.json"
+            self.metadata_gen.save_metadata(metadata, str(metadata_path))
 
             return output_path
 

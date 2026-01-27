@@ -1,12 +1,9 @@
-import sys
+# backend/app/services/parser_service.py
 from pathlib import Path
 from typing import Optional, Dict
 from datetime import datetime
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(PROJECT_ROOT / "core"))
-
-from backend.core.parsing.parsing import parse_successfactors_with_csf, parse_successfactors_xml
+from backend.core.parsing import parse_successfactors_with_csf, parse_successfactors_xml
 from backend.core.generators.golden_record import GoldenRecordGenerator
 
 
@@ -33,7 +30,8 @@ class ParserService:
             target_country=country_code
         )
 
-        template_file = generator.generate_template(
+        # CAMBIO: generate_template ahora retorna un dict
+        result_files = generator.generate_template(
             parsed_model=parsed_model,
             language_code=language_code
         )
@@ -41,7 +39,10 @@ class ParserService:
         end_time = datetime.now()
         processing_time = (end_time - start_time).total_seconds()
 
-        template_path = Path(template_file)
+        # Usar el path del CSV
+        template_path = Path(result_files["csv"])  # CAMBIO AQUÍ
+        metadata_path = Path(result_files["metadata"])  # NUEVO
+
         field_count = 0
         if template_path.exists():
             with open(template_path, 'r', encoding='utf-8-sig') as f:
@@ -51,7 +52,8 @@ class ParserService:
                     field_count = len(header_fields) if header_fields[0] else 0
 
         return {
-            "output_file": template_file,
+            "output_file": str(template_path),
+            "metadata_file": str(metadata_path),  # NUEVO
             "field_count": field_count,
             "processing_time": processing_time
         }
