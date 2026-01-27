@@ -14,18 +14,16 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", response_model=ProcessResponse)
+@router.post("/")  # CAMBIO: "/" en lugar de "/process"
 async def process_files(
         request: ProcessRequest,
         user=Depends(get_current_user)
 ):
     """Procesa archivos XML para generar CSV"""
 
-    # Log para debugging
     logger.info(f"Processing request: {request}")
     logger.info(f"User: {user.email}")
 
-    # Verificar archivo principal
     main_file_path = FileService.get_file_path(request.main_file_id)
     if not main_file_path:
         logger.error(f"Main file not found: {request.main_file_id}")
@@ -36,7 +34,6 @@ async def process_files(
 
     logger.info(f"Main file found: {main_file_path}")
 
-    # Verificar archivo CSF (opcional)
     csf_file_path = None
     if request.csf_file_id:
         csf_file_path = FileService.get_file_path(request.csf_file_id)
@@ -65,7 +62,7 @@ async def process_files(
             success=True,
             message="Procesamiento completado exitosamente",
             output_file=Path(result["output_file"]).name,
-            metadata_file=Path(result["metadata_file"]).name,  # NUEVO
+            metadata_file=Path(result["metadata_file"]).name,
             field_count=result["field_count"],
             processing_time=result["processing_time"]
         )
@@ -84,14 +81,13 @@ async def process_files(
         )
 
 
-@router.get("/download/{filename}")
+@router.get("/download/{filename}")  # CAMBIO: "/download/{filename}" en lugar de "/process/download/{filename}"
 async def download_file(
         filename: str,
         user=Depends(get_current_user)
 ):
     """Descarga archivo CSV generado"""
 
-    # Validar nombre de archivo
     if ".." in filename or "/" in filename or "\\" in filename:
         raise HTTPException(
             status_code=400,
@@ -106,7 +102,6 @@ async def download_file(
             detail="Archivo no encontrado"
         )
 
-    # Verificar que el archivo esté dentro del directorio permitido
     if not file_path.resolve().is_relative_to(settings.OUTPUT_DIR.resolve()):
         raise HTTPException(
             status_code=403,
@@ -122,7 +117,7 @@ async def download_file(
     )
 
 
-@router.get("/list")
+@router.get("/list")  # CAMBIO: "/list" en lugar de "/process/list"
 async def list_processed_files(user=Depends(get_current_user)):
     """Lista archivos CSV procesados"""
     try:
@@ -153,7 +148,7 @@ async def list_processed_files(user=Depends(get_current_user)):
         )
 
 
-@router.delete("/output/{filename}")
+@router.delete("/output/{filename}")  # CAMBIO: "/output/{filename}" en lugar de "/process/output/{filename}"
 async def delete_output_file(
         filename: str,
         user=Depends(get_current_user)

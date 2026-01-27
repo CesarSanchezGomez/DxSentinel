@@ -1,35 +1,23 @@
 <!-- frontend/templates/base.html -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}DxSentinel{% endblock %}</title>
-    {% block extra_css %}{% endblock %}
+    <title>{% block title %}SuccessFactors Parser{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    {% if user %}
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h2>DxSentinel</h2>
-            </div>
-            <div class="nav-links">
-                <a href="/">Inicio</a>
-                <a href="/upload">Upload</a>
-            </div>
-            <div class="nav-user">
-                <span>{{ user.email }}</span>
-                <a href="/auth/logout" class="logout-btn">Cerrar sesión</a>
-            </div>
-        </div>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/upload">Upload</a>
+        <a href="/split">Split Layouts</a>  <!-- AGREGAR -->
     </nav>
-    {% endif %}
 
-    <main class="main-content">
+    <main>
         {% block content %}{% endblock %}
     </main>
 
-    {% block extra_js %}{% endblock %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

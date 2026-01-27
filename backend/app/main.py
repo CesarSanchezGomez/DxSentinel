@@ -81,6 +81,12 @@ async def upload_page(request: Request, user=Depends(get_current_user)):
 #         "user": {"email": user.email, "id": user.id}
 #     })
 
+
+# backend/app/main.py
+@app.get("/split", response_class=HTMLResponse)  # AGREGAR ESTA RUTA
+async def split_page(request: Request):
+    return templates.TemplateResponse("split.html", {"request": request})
+
 # ============================================
 # MANEJADOR DE ERRORES
 # ============================================

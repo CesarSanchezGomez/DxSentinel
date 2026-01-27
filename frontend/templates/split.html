@@ -1,0 +1,31 @@
+<!-- frontend/templates/split.html -->
+{% extends "base.html" %}
+
+{% block title %}Split Golden Record{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 50px auto;">
+    <h1>Split Golden Record into Layouts</h1>
+
+    <form id="splitForm">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="goldenFile">Golden Record CSV:</label>
+            <input type="file" id="goldenFile" accept=".csv" required style="display: block; margin-top: 5px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="metadataFile">Metadata JSON:</label>
+            <input type="file" id="metadataFile" accept=".json" required style="display: block; margin-top: 5px;">
+        </div>
+
+        <button type="submit" id="submitBtn" style="padding: 10px 20px; cursor: pointer;">Generate Layouts</button>
+    </form>
+
+    <div id="status" style="display: none; margin-top: 20px; padding: 10px; border-radius: 5px;"></div>
+    <div id="result" style="display: none; margin-top: 20px;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/split.js') }}"></script>
+{% endblock %}

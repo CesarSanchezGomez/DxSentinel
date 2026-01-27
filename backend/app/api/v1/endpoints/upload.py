@@ -1,3 +1,4 @@
+# backend/app/api/v1/endpoints/upload.py
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from ....models.upload import UploadResponse
 from ....services.file_service import FileService
@@ -8,10 +9,10 @@ router = APIRouter()
 settings = get_settings()
 
 
-@router.post("/", response_model=UploadResponse)
+@router.post("/")  # CAMBIO: Solo "/" porque el prefix ya tiene /upload
 async def upload_file(
     file: UploadFile = File(...),
-    user=Depends(get_current_user)  # Se mantiene solo para protección de ruta
+    user=Depends(get_current_user)
 ):
     if not file.filename.lower().endswith(".xml"):
         raise HTTPException(
@@ -47,7 +48,7 @@ async def upload_file(
         )
 
 
-@router.get("/list")
+@router.get("/list")  # CAMBIO: Solo "/list" -> /api/v1/upload/list
 async def list_files(user=Depends(get_current_user)):
     try:
         files = FileService.list_files()
@@ -63,7 +64,7 @@ async def list_files(user=Depends(get_current_user)):
         )
 
 
-@router.delete("/{file_id}")
+@router.delete("/{file_id}")  # CAMBIO: Solo "/{file_id}" -> /api/v1/upload/{file_id}
 async def delete_file(file_id: str, user=Depends(get_current_user)):
     if ".." in file_id or "/" in file_id or "\\" in file_id:
         raise HTTPException(

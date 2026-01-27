@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Optional, Dict
 from datetime import datetime
 
-from backend.core.parsing import parse_successfactors_with_csf, parse_successfactors_xml
-from backend.core.generators.golden_record import GoldenRecordGenerator
+from ...core.parsing import parse_successfactors_with_csf, parse_successfactors_xml
+from ...core.generators.golden_record import GoldenRecordGenerator
 
 
 class ParserService:
@@ -40,8 +40,8 @@ class ParserService:
         processing_time = (end_time - start_time).total_seconds()
 
         # Usar el path del CSV
-        template_path = Path(result_files["csv"])  # CAMBIO AQUÍ
-        metadata_path = Path(result_files["metadata"])  # NUEVO
+        template_path = Path(result_files["csv"])
+        metadata_path = Path(result_files["metadata"])
 
         field_count = 0
         if template_path.exists():
@@ -53,7 +53,7 @@ class ParserService:
 
         return {
             "output_file": str(template_path),
-            "metadata_file": str(metadata_path),  # NUEVO
+            "metadata_file": str(metadata_path),
             "field_count": field_count,
             "processing_time": processing_time
         }
