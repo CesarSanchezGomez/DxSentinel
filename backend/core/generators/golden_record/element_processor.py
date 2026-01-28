@@ -12,7 +12,7 @@ class ElementProcessor:
         "homeAddress", "phoneInfo", "emailInfo", "nationalIdCard",
         "emergencyContactPrimary", "personRelationshipInfo",
         "compInfo", "payComponentRecurring", "payComponentNonRecurring",
-        "workPermitInfo", "globalAssignmentInfo"
+        "workPermitInfo", "globalAssignmentInfo", "workPermitInfo_CURP","workPermitInfo_RFC", "globalAssignmentInfo"
     ]
 
     def __init__(self, target_country: Optional[str] = None):

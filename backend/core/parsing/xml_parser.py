@@ -25,23 +25,40 @@ class XMLParser:
     ELEMENT_FIELD_MAPPING = {
         'personalInfo': 'start-date',
         'PaymentInfo': 'effectiveStartDate',
-        'employmentInfo': 'hireDate',
+        'employmentInfo': 'start-date',
         'globalInfo': 'start-date',
-        'homeAddress': 'start-date'
+        'homeAddress': 'start-date',
+        'jobInfo' : 'start-date',
+        'personRelationshipInfo' : 'start-date',
+        'compInfo' : 'start-date',
+        'payComponentRecurring' : 'start-date'
+    
+    }
+    
+    # NUEVA: Constante para elementos a duplicar
+    ELEMENT_DUPLICATION_MAPPING = {
+        'workPermitInfo': ['RFC', 'CURP'],  # Lista de sufijos limpios
+        'homeAddress': ['home', 'fiscal']   # Lista de sufijos limpios
     }
 
-    def __init__(self):
+    def __init__(self, element_duplication_mapping: dict = None):
         self._current_depth = 0
         self._node_count = 0
+        self._elements_to_process = []  # Para seguimiento post-parsing
+        
+        # Permitir configuración personalizada de duplicación
+        if element_duplication_mapping is not None:
+            self.ELEMENT_DUPLICATION_MAPPING = element_duplication_mapping
 
     def parse_document(self,
-                       root: ET.Element,
-                       source_name: Optional[str] = None) -> XMLDocument:
+                    root: ET.Element,
+                    source_name: Optional[str] = None) -> XMLDocument:
         """
-        Parsea un documento XML completo.
+        Parsea un documento XML completo con duplicación de elementos.
         """
         self._current_depth = 0
         self._node_count = 0
+        self._elements_to_process = []
 
         namespaces = self._extract_all_namespaces(root)
         version, encoding = self._extract_xml_declaration_metadata(root)
@@ -54,6 +71,11 @@ class XMLParser:
             namespaces=namespaces
         )
 
+        # DEBUG: Mostrar conteo de elementos a duplicar
+        print(f"DEBUG: Found {len(self._elements_to_process)} elements to duplicate")
+        
+        # POST-PROCESAMIENTO: Duplicar elementos después del parsing completo
+        self._process_element_duplications()
         document = XMLDocument(
             root=root_node,
             source_name=source_name,
@@ -71,7 +93,7 @@ class XMLParser:
                        depth: int,
                        namespaces: Dict[str, str]) -> XMLNode:
         """
-        Parsea recursivamente un elemento y todos sus hijos.
+        Parsea recursivamente un elemento y registra elementos para duplicación.
         """
         self._node_count += 1
 
@@ -79,14 +101,6 @@ class XMLParser:
         attributes = self._extract_attributes(element)
         labels = self._extract_labels(element, attributes, namespaces)
         namespace = self._extract_namespace(element, namespaces)
-
-        children: List[XMLNode] = []
-        non_label_children_elements = []
-
-        for i, child_elem in enumerate(element):
-            child_tag = self._extract_tag_name(child_elem)
-            if not self._is_label_element(child_tag, child_elem):
-                non_label_children_elements.append((i, child_elem))
 
         node = XMLNode(
             tag=tag,
@@ -101,39 +115,318 @@ class XMLParser:
             text_content=self._extract_text_content(element),
             node_type=NodeType.UNKNOWN
         )
-        
+
+        # Verificar si este elemento necesita duplicación
+        should_duplicate, suffixes = self._should_duplicate_element(node)
+        if should_duplicate:
+            # Registrar para procesamiento posterior
+            self._elements_to_process.append({
+                'node': node,
+                'parent': parent,
+                'suffixes': suffixes,
+                'sibling_order': sibling_order
+            })
+
+        # Procesar inyección de campos de fecha (existente)
         should_inject, field_id = self._should_inject_start_date_field(node)
-        
+
         if should_inject:
             date_field = self._create_date_field_node(field_id)
             date_field.parent = node
             date_field.depth = depth + 1
             date_field.sibling_order = 0
-            children.append(date_field)
-            
-            for i, child_elem in non_label_children_elements:
-                child_node = self._parse_element(
-                    element=child_elem,
-                    parent=node,
-                    sibling_order=i + 1,
-                    depth=depth + 1,
-                    namespaces=namespaces
-                )
-                children.append(child_node)
-        else:
-            for i, child_elem in non_label_children_elements:
-                child_node = self._parse_element(
-                    element=child_elem,
-                    parent=node,
-                    sibling_order=i,
-                    depth=depth + 1,
-                    namespaces=namespaces
-                )
-                children.append(child_node)
+            node.children.append(date_field)
 
-        node.children = children
+        # Procesar hijos no-label
+        child_index = 0
+        for i, child_elem in enumerate(element):
+            child_tag = self._extract_tag_name(child_elem)
+            if not self._is_label_element(child_tag, child_elem):
+                child_node = self._parse_element(
+                    element=child_elem,
+                    parent=node,
+                    sibling_order=child_index,
+                    depth=depth + 1,
+                    namespaces=namespaces
+                )
+                node.children.append(child_node)
+                child_index += 1
 
         return node
+
+    def _process_element_duplications(self):
+        """
+        Procesa la duplicación de todos los elementos registrados.
+        Elimina el original y crea elementos duplicados como si siempre hubieran existido.
+        """
+        for item in self._elements_to_process:
+            node = item['node']
+            parent = item['parent']
+            suffixes = item['suffixes']
+            original_sibling_order = item['sibling_order']
+
+            if not parent or not suffixes:
+                continue
+
+            # Obtener el ID base original
+            base_id = self._get_base_id(node)
+            
+            # DEBUG
+            print(f"DEBUG: Processing duplication for {base_id} with suffixes: {suffixes}")
+            
+            # Crear elementos duplicados para CADA sufijo
+            all_nodes = []
+            current_sibling_order = original_sibling_order
+            
+            for suffix in suffixes:
+                # Para el primer sufijo, podríamos renombrar el original
+                # Para consistencia, mejor crear todos nuevos
+                duplicated = self._duplicate_element_with_suffix(
+                    node, 
+                    suffix,
+                    parent
+                )
+                
+                # Actualizar posición
+                duplicated.sibling_order = current_sibling_order
+                duplicated.depth = node.depth
+                current_sibling_order += 1
+                
+                all_nodes.append(duplicated)
+                
+                # DEBUG
+                new_id = duplicated.technical_id or duplicated.attributes.get('id', '')
+                print(f"DEBUG: Created duplicate with ID: {new_id}")
+
+            # IMPORTANTE: NO agregar el nodo original a la lista
+            # Solo mantener los duplicados como si fueran los únicos que existieron
+            
+            # Reemplazar el original por los duplicados
+            self._replace_node_in_parent(parent, node, all_nodes)
+            
+            # DEBUG: Verificar reemplazo
+            print(f"DEBUG: Replaced original {base_id} with {len(all_nodes)} duplicates")
+
+    def _rename_element_with_suffix(self, 
+                                node: XMLNode, 
+                                suffix: str, 
+                                suffix_key: str):
+        """
+        Renombra un elemento existente con un sufijo específico.
+        """
+        # Actualizar ID técnico del nodo
+        original_id = node.technical_id or node.attributes.get('id', '')
+        if original_id:
+            new_id = f"{original_id}_{suffix}"
+            node.technical_id = new_id
+            if 'id' in node.attributes:
+                node.attributes['id'] = new_id
+        
+        # Agregar metadata de renombrado
+        node.attributes['data-renamed-from'] = original_id
+        node.attributes['data-suffix-type'] = suffix_key
+        node.attributes['data-suffix-value'] = suffix
+        
+        # Actualizar labels si existen
+        for lang, label in node.labels.items():
+            if label:  # Solo actualizar si hay label
+                node.labels[lang] = f"{label} ({suffix_key.upper()}: {suffix})"
+        
+        # Actualizar todos los IDs dentro del árbol
+        self._update_ids_in_cloned_tree(node, suffix)
+
+    def _replace_node_in_parent(self, 
+                               parent: XMLNode, 
+                               original: XMLNode, 
+                               replacements: List[XMLNode]):
+        """
+        Reemplaza un nodo por una lista de nodos en el padre.
+        """
+        if not parent:
+            return
+
+        new_children = []
+        replaced = False
+        
+        for child in parent.children:
+            if child == original:
+                # Reemplazar el original por todos los nodos
+                new_children.extend(replacements)
+                replaced = True
+            else:
+                new_children.append(child)
+        
+        # Si no se encontró (caso extremo), agregar al final
+        if not replaced:
+            new_children.extend(replacements)
+        
+        parent.children = new_children
+        
+        # Re-indexar sibling orders
+        for i, child in enumerate(parent.children):
+            child.sibling_order = i
+
+    def _should_duplicate_element(self, node: XMLNode) -> tuple[bool, list]:
+        """
+        Determina si un elemento debe ser duplicado y devuelve los sufijos.
+        """
+        # Buscar por ID técnico
+        element_id = node.technical_id or node.attributes.get('id', '')
+        
+        if element_id and element_id in self.ELEMENT_DUPLICATION_MAPPING:
+            suffixes = self.ELEMENT_DUPLICATION_MAPPING[element_id]
+            return True, suffixes
+        
+        return False, []
+
+    def _deep_clone_node(self, node: XMLNode, parent: Optional[XMLNode] = None) -> XMLNode:
+        """
+        Crea una copia profunda completa de un nodo, incluyendo todos sus hijos.
+        """
+        cloned = XMLNode(
+            tag=node.tag,
+            technical_id=node.technical_id,
+            attributes=node.attributes.copy(),
+            labels=node.labels.copy(),
+            children=[],
+            parent=parent,
+            depth=node.depth,
+            sibling_order=node.sibling_order,
+            namespace=node.namespace,
+            text_content=node.text_content,
+            node_type=node.node_type
+        )
+        
+        # Clonar recursivamente todos los hijos
+        for i, child in enumerate(node.children):
+            cloned_child = self._deep_clone_node(child, cloned)
+            cloned_child.sibling_order = i
+            cloned.children.append(cloned_child)
+        
+        return cloned
+
+    def _duplicate_element_with_suffix(self, 
+                                    original_node: XMLNode, 
+                                    suffix: str, 
+                                    parent: Optional[XMLNode] = None) -> XMLNode:
+        """
+        Crea una copia completa de un elemento con un sufijo específico.
+        PRESERVA EL ORIGEN (csf/sdm) del elemento original.
+        """
+        # Crear copia profunda
+        duplicated = self._deep_clone_node(original_node, parent)
+        
+        # Obtener ID base
+        base_id = self._get_base_id(original_node)
+        
+        # Crear nuevo ID limpio
+        new_id = f"{base_id}_{suffix}"
+        
+        # Actualizar IDs
+        duplicated.technical_id = new_id
+        if 'id' in duplicated.attributes:
+            duplicated.attributes['id'] = new_id
+        
+        # **CRÍTICO: Preservar el origen del elemento**
+        # Copiar todos los atributos de origen del original
+        origin_attributes = ['data-origin', 'origin', 'source', 'file_type']
+        for attr in origin_attributes:
+            if attr in original_node.attributes and attr not in duplicated.attributes:
+                duplicated.attributes[attr] = original_node.attributes[attr]
+        
+        # Para elementos CSF, también preservar atributos específicos
+        if 'data-origin' in original_node.attributes and original_node.attributes['data-origin'] == 'csf':
+            # Preservar todos los atributos CSF
+            csf_attrs = ['data-country', 'data-original-id', 'data-full-id']
+            for attr in csf_attrs:
+                if attr in original_node.attributes:
+                    duplicated.attributes[attr] = original_node.attributes[attr]
+        
+        # NO agregar metadata de duplicación para que parezca original
+        # El elemento duplicado debe ser indistinguible del original
+        
+        # Actualizar labels si existen (solo añadir sufijo al texto)
+        if duplicated.labels:
+            for lang in duplicated.labels:
+                if duplicated.labels[lang]:
+                    # Añadir sufijo al final del label
+                    duplicated.labels[lang] = f"{duplicated.labels[lang]} ({suffix})"
+        
+        # Actualizar todos los IDs dentro del árbol clonado
+        self._update_ids_in_cloned_tree(duplicated, suffix, base_id)
+        
+        return duplicated
+
+
+    def _get_base_id(self, node: XMLNode) -> str:
+        """
+        Obtiene el ID base sin sufijos duplicados.
+        """
+        original_id = node.technical_id or node.attributes.get('id', '')
+        
+        # Si es un ID duplicado anteriormente, extraer el base
+        for element_id, suffixes in self.ELEMENT_DUPLICATION_MAPPING.items():
+            if original_id == element_id:
+                return element_id
+            
+            for suffix in suffixes:
+                if original_id.endswith(f"_{suffix}"):
+                    # Es un ID con sufijo, verificar si ya tiene múltiples sufijos
+                    parts = original_id.split('_')
+                    if len(parts) > 2:
+                        # Tiene múltiples sufijos, devolver solo base + último sufijo
+                        return f"{parts[0]}_{parts[-1]}"
+        
+        return original_id
+
+    def _update_ids_in_cloned_tree(self, node: XMLNode, suffix: str, base_id: str):
+        """
+        Actualiza recursivamente todos los IDs dentro de un árbol clonado.
+        PRESERVA los atributos de origen durante la actualización.
+        """
+        current_id = node.technical_id or node.attributes.get('id', '')
+        
+        if current_id and base_id in current_id:
+            # Crear nuevo ID
+            if current_id == base_id:
+                new_id = f"{base_id}_{suffix}"
+            else:
+                # Ya tiene algún sufijo, reemplazar
+                parts = current_id.split('_')
+                if len(parts) >= 2:
+                    # Mantener base + nuevo sufijo
+                    new_id = f"{parts[0]}_{suffix}"
+                else:
+                    new_id = f"{current_id}_{suffix}"
+            
+            # Actualizar IDs
+            node.technical_id = new_id
+            if 'id' in node.attributes:
+                node.attributes['id'] = new_id
+            
+            # **CRÍTICO: También actualizar data-original-id si existe**
+            if 'data-original-id' in node.attributes:
+                # data-original-id debe apuntar al ID original SIN sufijo
+                orig_original_id = node.attributes['data-original-id']
+                if base_id in orig_original_id:
+                    # Extraer el ID base del data-original-id
+                    orig_parts = orig_original_id.split('_')
+                    if len(orig_parts) > 1 and any(s in orig_parts[-1] for s in ['csf', 'sdm']):
+                        # Tiene sufijo de origen, mantenerlo
+                        node.attributes['data-original-id'] = f"{orig_parts[0]}_{suffix}_{orig_parts[-1]}"
+                    else:
+                        node.attributes['data-original-id'] = f"{orig_parts[0]}_{suffix}"
+            
+            # **CRÍTICO: Actualizar data-full-id si existe (para elementos CSF)**
+            if 'data-full-id' in node.attributes:
+                full_id = node.attributes['data-full-id']
+                if base_id in full_id:
+                    # Reemplazar la parte del ID base en el data-full-id
+                    node.attributes['data-full-id'] = full_id.replace(base_id, f"{base_id}_{suffix}")
+        
+        # Actualizar IDs de los hijos recursivamente
+        for child in node.children:
+            self._update_ids_in_cloned_tree(child, suffix, base_id)
 
     def _extract_tag_name(self, element: ET.Element) -> str:
         """Extrae el nombre del tag sin namespace."""
