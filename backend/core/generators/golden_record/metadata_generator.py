@@ -1,328 +1,388 @@
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 import re
 import json
+from pathlib import Path
 
 
 class MetadataGenerator:
-    """
-    Generates metadata JSON for Golden Record mapping
-    based on SAP SuccessFactors HRIS elements.
-    """
+    """Generates metadata JSON for Golden Record mapping with SAP SuccessFactors business keys."""
 
-    # =====================================================
-    # HRIS CANONICAL ELEMENT LIST
-    # =====================================================
-    HRIS_ELEMENTS: Set[str] = {
-        "personInfo",
-        "personalInfo",
-        "globalInfo",
-        "nationalIdCard",
-        "homeAddress",
-        "phoneInfo",
-        "emailInfo",
-        "imInfo",
-        "emergencyContactPrimary",
-        "personRelationshipInfo",
-        "directDeposit",
-        "paymentInfo",
-        "employmentInfo",
-        "jobInfo",
-        "compInfo",
-        "payComponentRecurring",
-        "payComponentNonRecurring",
-        "jobRelationsInfo",
-        "workPermitInfo",
-        "globalAssignmentInfo",
-        "pensionPayoutsInfo",
-        "userAccountInfo"
-    }
-
-    # =====================================================
-    # KEY DETECTION PATTERNS
-    # =====================================================
-    PRIMARY_KEY_PATTERNS = [
-        r".*-id-external$",
-        r"^person-id$",
-        r"^user-id$",
-        r"^worker$",
-        r"^employee-id$",
-        r"^payroll-id$",
-        r"^seq-number$"
-    ]
-
-    FOREIGN_KEY_PATTERNS = [
-        r"^personInfo\.",
-        r"^employmentInfo\.",
-        r"^jobInfo\.",
-        r"\.person-id.*",
-        r"\.user-id.*",
-        r"\.worker.*"
-    ]
-
-    # =====================================================
-    # SAP SF KNOWN KEY MODEL
-    # =====================================================
-    KNOWN_KEY_MAPPINGS = {
+    # Business Keys configuration según templates oficiales de SAP SuccessFactors
+    SAP_BUSINESS_KEYS = {
         "personInfo": {
-            "primary_keys": ["person-id-external", "user-id"],
-            "is_master": True
+            "keys": ["personIdExternal"],
+            "sap_format": ["user-id"],
+            "is_master": True,
+            "description": "Master entity - uses user-id as primary key"
         },
         "personalInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "startDate"],
+            "sap_format": ["personInfo.person-id-external", "start-date"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "globalInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "startDate", "country"],
+            "sap_format": ["personInfo.person-id-external", "start-date", "country"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "nationalIdCard": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "country", "cardType"],
+            "sap_format": ["personInfo.person-id-external", "country", "card-type"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "homeAddress": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "effectiveStartDate", "addressType"],
+            "sap_format": ["personInfo.person-id-external", "start-date", "address-type"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "phoneInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "phoneType"],
+            "sap_format": ["personInfo.person-id-external", "phone-type"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "emailInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "emailType"],
+            "sap_format": ["personInfo.person-id-external", "email-type"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "imInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "domain"],
+            "sap_format": ["personInfo.person-id-external", "domain"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "emergencyContactPrimary": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "name", "relationship"],
+            "sap_format": ["personInfo.person-id-external", "name", "relationship"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "personRelationshipInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["personIdExternal", "relatedPersonIdExternal", "startDate"],
+            "sap_format": ["personInfo.person-id-external", "related-person-id-external", "start-date"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "employmentInfo": {
-            "primary_keys": ["person-id-external"]
+            "keys": ["personIdExternal", "userId", "startDate"],
+            "sap_format": ["person-id-external", "user-id", "start-date"],
+            "is_master": False,
+            "references": "personInfo"
         },
         "jobInfo": {
-            "primary_keys": ["worker"],
-            "alias_of": "person-id-external"
+            "keys": ["userId", "startDate", "seqNumber"],
+            "sap_format": ["user-id", "start-date", "seq-number"],
+            "is_master": False,
+            "references": "employmentInfo"
         },
         "compInfo": {
-            "primary_keys": ["worker"],
-            "alias_of": "person-id-external"
+            "keys": ["userId", "startDate", "seqNumber"],
+            "sap_format": ["user-id", "start-date", "seq-number"],
+            "is_master": False,
+            "references": "employmentInfo"
         },
         "payComponentRecurring": {
-            "foreign_keys": ["jobInfo.worker"]
+            "keys": ["userId", "payComponent", "startDate", "seqNumber"],
+            "sap_format": ["user-id", "pay-component", "start-date", "seq-number"],
+            "is_master": False,
+            "references": "employmentInfo"
         },
         "payComponentNonRecurring": {
-            "foreign_keys": ["jobInfo.worker"]
+            "keys": ["userId", "payComponentCode", "payDate"],
+            "sap_format": ["user-id", "pay-component-code", "pay-date"],
+            "is_master": False,
+            "references": "employmentInfo"
         },
         "jobRelationsInfo": {
-            "foreign_keys": ["jobInfo.worker"]
-        },
-        "globalAssignmentInfo": {
-            "foreign_keys": ["jobInfo.worker"]
-        },
-        "directDeposit": {
-            "foreign_keys": ["employmentInfo.person-id-external"]
-        },
-        "paymentInfo": {
-            "foreign_keys": ["employmentInfo.person-id-external"]
-        },
-        "pensionPayoutsInfo": {
-            "foreign_keys": ["employmentInfo.person-id-external"]
+            "keys": ["userId", "relationshipType", "startDate"],
+            "sap_format": ["user-id", "relationship-type", "start-date"],
+            "is_master": False,
+            "references": "employmentInfo"
         },
         "workPermitInfo": {
-            "foreign_keys": ["personInfo.person-id-external"]
+            "keys": ["userId", "country", "documentType", "documentNumber", "issueDate"],
+            "sap_format": ["user-id", "country", "document-type", "document-number", "issue-date"],
+            "is_master": False,
+            "references": "employmentInfo"
         },
-        "userAccountInfo": {
-            "primary_keys": ["user-id"],
-            "alias_of": "person-id-external"
+        "globalAssignmentInfo": {
+            "keys": ["userId", "startDate"],
+            "sap_format": ["user-id", "start-date"],
+            "is_master": False,
+            "references": "employmentInfo"
+        },
+        "pensionPayoutsInfo": {
+            "keys": ["userId"],
+            "sap_format": ["user-id"],
+            "is_master": False,
+            "references": "employmentInfo"
         }
     }
 
-    # =====================================================
-    # INIT
-    # =====================================================
     def __init__(self):
-        self.primary_patterns = [re.compile(p, re.IGNORECASE) for p in self.PRIMARY_KEY_PATTERNS]
-        self.foreign_patterns = [re.compile(p, re.IGNORECASE) for p in self.FOREIGN_KEY_PATTERNS]
+        pass
 
-    # =====================================================
-    # MAIN GENERATOR
-    # =====================================================
     def generate_metadata(self, processed_data: Dict, columns: List[Dict]) -> Dict:
-        elements = [
-            e for e in processed_data.get("elements", [])
-            if e.get("element_id") in self.HRIS_ELEMENTS
-        ]
+        """Generates complete metadata for Golden Record."""
+        elements = processed_data.get("elements", [])
 
         metadata = {
-            "version": "1.0.0",
+            "version": "2.0.0",
+            "generated_at": self._get_timestamp(),
             "elements": {},
             "field_catalog": {},
-            "key_mappings": {},
+            "business_keys": {},
             "layout_split_config": {}
         }
 
         for element in elements:
-            meta = self._analyze_element(element)
-            metadata["elements"][element["element_id"]] = meta
+            element_id = element["element_id"]
+            element_metadata = self._analyze_element(element, columns)
+            metadata["elements"][element_id] = element_metadata
 
         metadata["field_catalog"] = self._build_field_catalog(columns, metadata["elements"])
-        metadata["key_mappings"] = self._build_key_mappings(metadata["elements"])
+        metadata["business_keys"] = self._build_business_keys_mapping(metadata["elements"], columns)
         metadata["layout_split_config"] = self._build_layout_split_config(
             metadata["elements"],
-            metadata["field_catalog"]
+            metadata["field_catalog"],
+            metadata["business_keys"]
         )
 
         return metadata
 
-    # =====================================================
-    # ELEMENT ANALYSIS
-    # =====================================================
-    def _analyze_element(self, element: Dict) -> Dict:
+    def _analyze_element(self, element: Dict, all_columns: List[Dict]) -> Dict:
+        """Analyzes an element using SAP business keys configuration."""
         element_id = element["element_id"]
         fields = element["fields"]
 
-        known = self.KNOWN_KEY_MAPPINGS.get(element_id, {})
-
-        detected_primary = []
-        detected_foreign = []
-
-        for field in fields:
-            fid = field["field_id"]
-            full = field["full_field_id"]
-
-            if self._is_primary_key(fid):
-                detected_primary.append({"field": fid, "full": full})
-
-            if self._is_foreign_key(fid):
-                detected_foreign.append({"field": fid, "full": full})
-
-        primary = known.get("primary_keys", [])
-        foreign = known.get("foreign_keys", [])
-
-        if not primary and not foreign:
-            primary = [k["field"] for k in detected_primary]
-            foreign = [k["field"] for k in detected_foreign]
+        sap_config = self.SAP_BUSINESS_KEYS.get(element_id, {})
 
         return {
             "element_id": element_id,
-            "is_master": known.get("is_master", False),
-            "has_own_keys": bool(primary),
-            "primary_keys": primary,
-            "foreign_keys": foreign,
-            "alias_of": known.get("alias_of"),
+            "is_master": sap_config.get("is_master", False),
+            "business_keys": sap_config.get("keys", []),
+            "sap_format_keys": sap_config.get("sap_format", []),
+            "references": sap_config.get("references"),
             "field_count": len(fields),
-            "notes": self._generate_notes(primary, foreign)
+            "description": sap_config.get("description", f"Standard {element_id} entity")
         }
 
-    # =====================================================
-    # KEY HELPERS
-    # =====================================================
-    def _is_primary_key(self, field_id: str) -> bool:
-        return any(p.match(field_id) for p in self.primary_patterns)
-
-    def _is_foreign_key(self, field_id: str) -> bool:
-        return any(p.match(field_id) for p in self.foreign_patterns)
-
-    # =====================================================
-    # FIELD CATALOG
-    # =====================================================
     def _build_field_catalog(self, columns: List[Dict], elements_meta: Dict) -> Dict:
+        """Builds complete field catalog."""
         catalog = {}
 
-        for col in columns:
-            elem = col["element_id"]
-            if elem not in elements_meta:
-                continue
+        for column in columns:
+            full_field_id = column["full_id"]
+            element_id = column["element_id"]
+            field_id = column["field_id"]
 
-            fid = col["field_id"]
-            full = col["full_id"]
-            meta = elements_meta[elem]
+            element_meta = elements_meta.get(element_id, {})
+            is_business_key = field_id in element_meta.get("business_keys", [])
 
-            catalog[full] = {
-                "element": elem,
-                "field": fid,
-                "is_primary_key": fid in meta["primary_keys"],
-                "is_foreign_key": fid in meta["foreign_keys"],
-                "is_key": fid in meta["primary_keys"] or fid in meta["foreign_keys"],
-                "data_type": self._infer_data_type(fid)
+            catalog[full_field_id] = {
+                "element": element_id,
+                "field": field_id,
+                "is_business_key": is_business_key,
+                "data_type": self._infer_data_type(field_id),
+                "category": self._categorize_field(field_id)
             }
 
         return catalog
 
-    # =====================================================
-    # KEY MAPPINGS
-    # =====================================================
-    def _build_key_mappings(self, elements_meta: Dict) -> Dict:
+    def _build_business_keys_mapping(self, elements_meta: Dict, columns: List[Dict]) -> Dict:
+        """Builds business keys mapping for layout splitting."""
         mappings = {}
+        available_columns = [col["full_id"] for col in columns]
 
-        master = "personInfo"
-        master_key = elements_meta[master]["primary_keys"][0]
+        for elem_id, meta in elements_meta.items():
+            business_keys = meta.get("business_keys", [])
+            sap_format_keys = meta.get("sap_format_keys", [])
+            references = meta.get("references")
 
-        for eid, meta in elements_meta.items():
-            if meta["has_own_keys"]:
-                pk = meta["primary_keys"][0]
-                mappings[eid] = {
-                    "key_source": "own",
-                    "key_field": pk,
-                    "golden_column": f"{eid}_{pk}"
-                }
-            else:
-                fk = meta["foreign_keys"][0] if meta["foreign_keys"] else master_key
-                if "." in fk:
-                    ref_elem, ref_field = fk.split(".", 1)
-                else:
-                    ref_elem, ref_field = master, master_key
+            if not business_keys:
+                continue
 
-                mappings[eid] = {
-                    "key_source": "foreign",
-                    "key_field": ref_field,
-                    "golden_column": f"{ref_elem}_{ref_field}",
-                    "references": ref_elem
-                }
+            key_mappings = []
+            for golden_key, sap_key in zip(business_keys, sap_format_keys):
+                # Determinar la columna en el Golden Record
+                golden_column = self._resolve_golden_column(
+                    elem_id,
+                    golden_key,
+                    sap_key,
+                    available_columns
+                )
+
+                if golden_column:
+                    key_mappings.append({
+                        "golden_column": golden_column,
+                        "sap_column": sap_key,
+                        "field_name": golden_key,
+                        "is_foreign": "." in sap_key
+                    })
+
+            mappings[elem_id] = {
+                "business_keys": key_mappings,
+                "references": references,
+                "is_master": meta.get("is_master", False)
+            }
 
         return mappings
 
-    # =====================================================
-    # LAYOUT SPLIT CONFIG
-    # =====================================================
-    def _build_layout_split_config(self, elements_meta: Dict, field_catalog: Dict) -> Dict:
+    def _resolve_golden_column(
+            self,
+            elem_id: str,
+            golden_key: str,
+            sap_key: str,
+            available_columns: List[str]
+    ) -> Optional[str]:
+        """
+        Resuelve la columna del Golden Record para una business key.
+
+        Lógica de resolución:
+        1. user-id → personInfo_person-id-external
+        2. person-id-external → personInfo_person-id-external
+        3. personInfo.person-id-external → personInfo_person-id-external
+        4. Otros campos con referencia → buscar en el elemento referenciado
+        5. Campos locales → buscar en el elemento actual
+        """
+
+        # Caso especial: user-id o person-id-external sin prefijo
+        if sap_key in ["user-id", "person-id-external"]:
+            if "personInfo_person-id-external" in available_columns:
+                return "personInfo_person-id-external"
+
+        # Caso: Referencias con punto (personInfo.person-id-external)
+        if "." in sap_key:
+            ref_elem, ref_field = sap_key.split(".", 1)
+            # El Golden Record usa kebab-case, no camelCase
+            golden_column = f"{ref_elem}_{ref_field}"
+
+            if golden_column in available_columns:
+                return golden_column
+
+        # Caso: Campo local en el elemento actual
+        # Intentar con el golden_key directamente
+        candidate = f"{elem_id}_{golden_key}"
+        if candidate in available_columns:
+            return candidate
+
+        # Intentar convertir golden_key a kebab-case si está en camelCase
+        kebab_key = self._camel_to_kebab_simple(golden_key)
+        candidate_kebab = f"{elem_id}_{kebab_key}"
+        if candidate_kebab in available_columns:
+            return candidate_kebab
+
+        # Buscar coincidencias parciales
+        for col in available_columns:
+            if col.endswith(f"_{golden_key}") or col.endswith(f"_{kebab_key}"):
+                return col
+
+        return None
+
+    def _camel_to_kebab_simple(self, camel_str: str) -> str:
+        """Convierte camelCase a kebab-case de forma simple."""
+        import re
+        kebab = re.sub('([a-z0-9])([A-Z])', r'\1-\2', camel_str)
+        return kebab.lower()
+
+    def _sap_to_camel_case(self, sap_field: str) -> str:
+        """Convierte formato SAP (kebab-case) a camelCase usado en Golden Record."""
+        # Casos especiales conocidos
+        special_cases = {
+            "person-id-external": "personIdExternal",
+            "user-id": "userId",
+            "start-date": "startDate",
+            "end-date": "endDate",
+            "card-type": "cardType",
+            "address-type": "addressType",
+            "phone-type": "phoneType",
+            "email-address": "emailType",
+            "related-person-id-external": "relatedPersonIdExternal",
+            "seq-number": "seqNumber",
+            "pay-component": "payComponent",
+            "pay-component-code": "payComponentCode",
+            "pay-date": "payDate",
+            "relationship-type": "relationshipType",
+            "document-type": "documentType",
+            "document-number": "documentNumber",
+            "issue-date": "issueDate"
+        }
+
+        if sap_field in special_cases:
+            return special_cases[sap_field]
+
+        # Conversión genérica para otros casos
+        parts = sap_field.split('-')
+        return parts[0] + ''.join(word.capitalize() for word in parts[1:])
+
+    def _build_layout_split_config(self, elements_meta: Dict, field_catalog: Dict,
+                                   business_keys: Dict) -> Dict:
+        """Builds configuration for splitting Golden Record into layouts."""
         config = {}
 
-        for eid in elements_meta:
-            fields = [
-                f for f, meta in field_catalog.items()
-                if meta["element"] == eid
+        for elem_id, meta in elements_meta.items():
+            element_fields = [
+                field_id for field_id, field_meta in field_catalog.items()
+                if field_meta["element"] == elem_id
             ]
 
-            config[eid] = {
-                "element_id": eid,
-                "fields": fields,
-                "field_count": len(fields),
-                "layout_filename": f"{eid}_template.csv",
-                "requires_foreign_key": not elements_meta[eid]["has_own_keys"]
+            business_key_config = business_keys.get(elem_id, {})
+
+            config[elem_id] = {
+                "element_id": elem_id,
+                "fields": element_fields,
+                "field_count": len(element_fields),
+                "business_keys": business_key_config.get("business_keys", []),
+                "layout_filename": f"{elem_id}_template.csv"
             }
 
         return config
 
-    # =====================================================
-    # UTILITIES
-    # =====================================================
     def _infer_data_type(self, field_id: str) -> str:
-        f = field_id.lower()
-        if "date" in f:
-            return "date"
-        if "id" in f or "code" in f:
-            return "string"
-        if "number" in f or "seq" in f:
-            return "integer"
-        return "string"
+        """Infers data type from field ID."""
+        field_lower = field_id.lower()
 
-    def _generate_notes(self, pk: List, fk: List) -> str:
-        if pk:
-            return f"Own key: {', '.join(pk)}"
-        if fk:
-            return f"Uses foreign key: {', '.join(fk)}"
-        return "Fallback to master key"
+        if "date" in field_lower:
+            return "date"
+        elif "id" in field_lower or "code" in field_lower:
+            return "string"
+        elif "number" in field_lower or "seq" in field_lower:
+            return "integer"
+        elif "rate" in field_lower or "ratio" in field_lower:
+            return "decimal"
+        elif "is-" in field_lower or field_lower.startswith("is"):
+            return "boolean"
+        else:
+            return "string"
+
+    def _categorize_field(self, field_id: str) -> str:
+        """Categorizes field for organization."""
+        field_lower = field_id.lower()
+
+        if any(k in field_lower for k in ["id", "code", "number"]):
+            return "identifier"
+        elif "date" in field_lower:
+            return "temporal"
+        elif "custom" in field_lower or "udf" in field_lower:
+            return "custom"
+        elif any(k in field_lower for k in ["name", "title", "description"]):
+            return "descriptive"
+        else:
+            return "operational"
+
+    def _get_timestamp(self) -> str:
+        """Gets current timestamp in ISO format."""
+        from datetime import datetime
+        return datetime.utcnow().isoformat() + 'Z'
 
     def save_metadata(self, metadata: Dict, output_path: str) -> str:
-        with open(output_path, "w", encoding="utf-8") as f:
+        """Saves metadata to JSON file."""
+        with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
         return output_path

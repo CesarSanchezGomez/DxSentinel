@@ -1,6 +1,4 @@
-# backend/core/generators/golden_record/layout_splitter.py
-
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Tuple
 import csv
 import json
 from pathlib import Path
@@ -8,68 +6,24 @@ from backend.core.generators.golden_record.exceptions import GoldenRecordError
 
 
 class LayoutSplitter:
-    """
-    Splits Golden Record CSV into individual SAP SuccessFactors HRIS layout templates.
-    """
+    """Splits Golden Record CSV into individual SAP layout templates."""
 
-    # =====================================================
-    # HRIS CANONICAL ELEMENT LIST
-    # =====================================================
-    HRIS_ELEMENTS: Set[str] = {
-        "personInfo",
-        "personalInfo",
-        "globalInfo",
-        "nationalIdCard",
-        "homeAddress",
-        "phoneInfo",
-        "emailInfo",
-        "imInfo",
-        "emergencyContactPrimary",
-        "personRelationshipInfo",
-        "directDeposit",
-        "paymentInfo",
-        "employmentInfo",
-        "jobInfo",
-        "compInfo",
-        "payComponentRecurring",
-        "payComponentNonRecurring",
-        "jobRelationsInfo",
-        "workPermitInfo",
-        "globalAssignmentInfo",
-        "pensionPayoutsInfo",
-        "userAccountInfo"
-    }
-
-    # =====================================================
-    # INIT
-    # =====================================================
     def __init__(self, metadata_path: str):
         self.metadata = self._load_metadata(metadata_path)
-
-        self.key_mappings = self.metadata.get("key_mappings", {})
-        self.layout_config = {
-            k: v for k, v in self.metadata.get("layout_split_config", {}).items()
-            if k in self.HRIS_ELEMENTS
-        }
+        self.business_keys = self.metadata.get("business_keys", {})
+        self.layout_config = self.metadata.get("layout_split_config", {})
         self.field_catalog = self.metadata.get("field_catalog", {})
 
-    # =====================================================
-    # METADATA LOADING
-    # =====================================================
     def _load_metadata(self, metadata_path: str) -> Dict:
+        """Loads metadata JSON file."""
         try:
-            with open(metadata_path, "r", encoding="utf-8") as f:
+            with open(metadata_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
             raise GoldenRecordError(f"Error loading metadata: {str(e)}") from e
 
-    # =====================================================
-    # PUBLIC API
-    # =====================================================
     def split_golden_record(self, golden_record_path: str, output_dir: str) -> List[str]:
-        """
-        Splits Golden Record into individual HRIS layout CSVs.
-        """
+        """Splits Golden Record into individual layout CSVs."""
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
@@ -88,187 +42,234 @@ class LayoutSplitter:
 
         return generated_files
 
-    # =====================================================
-    # GOLDEN RECORD READER
-    # =====================================================
     def _read_golden_record(self, csv_path: str) -> Dict:
-        with open(csv_path, "r", encoding="utf-8-sig") as f:
-            reader = csv.reader(f)
-            technical_header = next(reader)
-            descriptive_header = next(reader)
-            data_rows = list(reader)
+        """Reads Golden Record CSV with headers, trying multiple encodings."""
+        encodings_to_try = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']
 
-        return {
-            "technical_header": technical_header,
-            "descriptive_header": descriptive_header,
-            "data_rows": data_rows
-        }
+        for encoding in encodings_to_try:
+            try:
+                with open(csv_path, 'r', encoding=encoding) as f:
+                    reader = csv.reader(f)
+                    technical_header = next(reader)
+                    descriptive_header = next(reader)
+                    data_rows = list(reader)
 
-    # =====================================================
-    # LAYOUT GENERATION
-    # =====================================================
-    def _generate_layout(
-        self,
-        element_id: str,
-        config: Dict,
-        golden_data: Dict,
-        output_dir: Path
-    ) -> str:
-
-        element_fields = config.get("fields", [])
-        key_mapping = self.key_mappings.get(element_id, {})
-
-        technical_indices: List[int] = []
-        technical_cols: List[str] = []
-        descriptive_cols: List[str] = []
-
-        # -------------------------------------------------
-        # 1. KEY COLUMN (PRIMARY / FOREIGN)
-        # -------------------------------------------------
-        key_column = key_mapping.get("golden_column")
-        layout_key = key_mapping.get("key_field")
-        key_source = key_mapping.get("key_source")
-
-        if key_column and key_column in golden_data["technical_header"]:
-            key_idx = golden_data["technical_header"].index(key_column)
-            technical_indices.append(key_idx)
-
-            if key_source == "foreign":
-                ref_element = key_mapping.get("references", "personInfo")
-                technical_cols.append(f"{ref_element}.{layout_key}")
-            else:
-                technical_cols.append(layout_key)
-
-            descriptive_cols.append(golden_data["descriptive_header"][key_idx])
-
-        # -------------------------------------------------
-        # 2. ELEMENT FIELDS
-        # -------------------------------------------------
-        for full_field_id in element_fields:
-            if full_field_id not in golden_data["technical_header"]:
+                return {
+                    "technical_header": technical_header,
+                    "descriptive_header": descriptive_header,
+                    "data_rows": data_rows
+                }
+            except (UnicodeDecodeError, UnicodeError):
                 continue
+            except StopIteration:
+                raise GoldenRecordError("CSV file is empty or has insufficient rows")
+            except Exception as e:
+                raise GoldenRecordError(f"Error reading Golden Record with {encoding}: {str(e)}") from e
 
-            idx = golden_data["technical_header"].index(full_field_id)
-            if idx in technical_indices:
-                continue
+        raise GoldenRecordError(
+            f"Unable to read file '{csv_path}' with any supported encoding. "
+            f"Tried: {', '.join(encodings_to_try)}"
+        )
 
-            technical_indices.append(idx)
+    def _generate_layout(self, element_id: str, config: Dict,
+                         golden_data: Dict, output_dir: Path) -> str:
+        """Generates individual layout CSV file with SAP business keys."""
 
-            # SAP format: sin prefijo del elemento
-            # jobInfo_holiday-calendar-code -> holiday-calendar-code
-            field_name = full_field_id.split("_", 1)[1] if "_" in full_field_id else full_field_id
-            technical_cols.append(field_name)
-            descriptive_cols.append(golden_data["descriptive_header"][idx])
+        element_fields = config["fields"]
+        business_key_config = self.business_keys.get(element_id, {})
+        business_keys_list = business_key_config.get("business_keys", [])
 
-        # -------------------------------------------------
-        # 3. SAP STANDARD COLUMNS
-        # -------------------------------------------------
-        sap_cols = self._get_sap_standard_columns(element_id)
-        technical_cols.extend(sap_cols["technical"])
-        descriptive_cols.extend(sap_cols["descriptive"])
+        # Estructuras para construir el CSV
+        columns = []  # Lista de (sap_column_name, source_index, descriptive_name, is_synthetic)
 
-        if not technical_cols:
+        # Paso 1: Procesar business keys (pueden ser sintéticas o del Golden Record)
+        for bk in business_keys_list:
+            golden_column = bk.get("golden_column")
+            sap_column = bk.get("sap_column")
+
+            # Intentar encontrar la columna en el Golden Record
+            source_info = self._find_source_column(
+                golden_column,
+                sap_column,
+                golden_data["technical_header"]
+            )
+
+            if source_info:
+                source_idx, descriptive = source_info
+                if source_idx < len(golden_data["descriptive_header"]):
+                    descriptive = golden_data["descriptive_header"][source_idx]
+
+                columns.append({
+                    "sap_name": sap_column,
+                    "source_idx": source_idx,
+                    "descriptive": descriptive,
+                    "is_synthetic": False
+                })
+
+        # Paso 2: Agregar campos del elemento (excluyendo los ya agregados)
+        added_indices = {col["source_idx"] for col in columns}
+
+        for field_id in element_fields:
+            if field_id in golden_data["technical_header"]:
+                idx = golden_data["technical_header"].index(field_id)
+
+                if idx not in added_indices:
+                    field_name = self._extract_field_name(field_id, element_id)
+
+                    columns.append({
+                        "sap_name": field_name,
+                        "source_idx": idx,
+                        "descriptive": golden_data["descriptive_header"][idx],
+                        "is_synthetic": False
+                    })
+                    added_indices.add(idx)
+
+        if not columns:
+            print(f"Warning: No fields found for {element_id}, skipping")
             return None
 
-        # -------------------------------------------------
-        # 4. WRITE CSV
-        # -------------------------------------------------
+        # Generar el archivo CSV
         layout_path = output_dir / config["layout_filename"]
 
-        with open(layout_path, "w", newline="", encoding="utf-8-sig") as f:
+        with open(layout_path, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.writer(f)
-            writer.writerow(technical_cols)
-            writer.writerow(descriptive_cols)
 
+            # Escribir headers
+            technical_header = [col["sap_name"] for col in columns]
+            descriptive_header = [col["descriptive"] for col in columns]
+
+            writer.writerow(technical_header)
+            writer.writerow(descriptive_header)
+
+            # Escribir datos
             for row in golden_data["data_rows"]:
-                layout_row = [row[i] if i < len(row) else "" for i in technical_indices]
-                layout_row.extend([""] * len(sap_cols["technical"]))
-                writer.writerow(layout_row)
+                output_row = []
+                for col in columns:
+                    idx = col["source_idx"]
+                    value = row[idx] if idx < len(row) else ""
+                    output_row.append(value)
+
+                writer.writerow(output_row)
 
         return str(layout_path)
 
-    # =====================================================
-    # SAP STANDARD COLUMNS
-    # =====================================================
-    def _get_sap_standard_columns(self, element_id: str) -> Dict[str, List[str]]:
+    def _find_source_column(
+            self,
+            golden_column: Optional[str],
+            sap_column: str,
+            available_headers: List[str]
+    ) -> Optional[Tuple[int, str]]:
         """
-        Returns SAP-required standard columns per HRIS element.
+        Encuentra la columna fuente en el Golden Record para una business key.
+
+        Lógica de derivación:
+        - user-id → personInfo_person-id-external
+        - person-id-external → personInfo_person-id-external
+        - personInfo.person-id-external → personInfo_person-id-external
+        - start-date → {element}_start-date (busca en el elemento actual)
         """
 
-        default_cols = {
-            "technical": ["operation"],
-            "descriptive": ["Operation"]
+        # Caso 1: La columna está explícitamente mapeada y existe
+        if golden_column and golden_column in available_headers:
+            idx = available_headers.index(golden_column)
+            return (idx, self._generate_descriptive_name(sap_column))
+
+        # Caso 2: Derivar la columna basándose en el nombre SAP
+        derived_column = self._derive_golden_column(sap_column, available_headers)
+
+        if derived_column and derived_column in available_headers:
+            idx = available_headers.index(derived_column)
+            return (idx, self._generate_descriptive_name(sap_column))
+
+        # No se pudo encontrar ni derivar la columna
+        return None
+
+    def _derive_golden_column(self, sap_column: str, available_headers: List[str]) -> Optional[str]:
+        """
+        Deriva la columna del Golden Record basándose en el nombre SAP.
+
+        Reglas de derivación:
+        1. user-id → personInfo_person-id-external
+        2. person-id-external → personInfo_person-id-external
+        3. personInfo.person-id-external → personInfo_person-id-external
+        4. start-date → buscar *_start-date en available_headers
+        5. Otros campos con referencia (ej: related-person-id-external) → buscar personRelationshipInfo_related-person-id-external
+        """
+
+        # Regla 1 y 2: user-id o person-id-external sin prefijo
+        if sap_column in ["user-id", "person-id-external"]:
+            if "personInfo_person-id-external" in available_headers:
+                return "personInfo_person-id-external"
+
+        # Regla 3: Referencias con punto (personInfo.person-id-external)
+        if "." in sap_column:
+            ref_element, ref_field = sap_column.split(".", 1)
+            # Convertir el formato SAP a formato Golden Record
+            golden_field = self._sap_to_golden_field(ref_field)
+            candidate = f"{ref_element}_{golden_field}"
+
+            if candidate in available_headers:
+                return candidate
+
+        # Regla 4: Campos comunes que pueden estar en múltiples elementos
+        if sap_column in ["start-date", "end-date", "country", "seq-number"]:
+            # Buscar en todos los headers disponibles que terminen con este campo
+            golden_field = self._sap_to_golden_field(sap_column)
+
+            for header in available_headers:
+                if header.endswith(f"_{golden_field}") or header.endswith(f"-{sap_column}"):
+                    return header
+
+        # Regla 5: Buscar coincidencia directa convirtiendo SAP a formato Golden
+        golden_field = self._sap_to_golden_field(sap_column)
+
+        # Intentar encontrar en cualquier elemento
+        for header in available_headers:
+            if header.endswith(f"_{golden_field}"):
+                return header
+
+        return None
+
+    def _sap_to_golden_field(self, sap_field: str) -> str:
+        """Convierte un campo SAP (kebab-case) a formato Golden Record (kebab-case sin cambios)."""
+        # En el Golden Record los campos también usan kebab-case
+        return sap_field
+
+    def _generate_descriptive_name(self, sap_column: str) -> str:
+        """Genera un nombre descriptivo para una columna SAP."""
+        descriptive_map = {
+            "user-id": "User ID",
+            "person-id-external": "Person ID External",
+            "personInfo.person-id-external": "Person ID External",
+            "start-date": "Start Date",
+            "end-date": "End Date",
+            "seq-number": "Sequence Number",
+            "pay-component": "Pay Component",
+            "email-address": "Email Address",
+            "phone-type": "Phone Type",
+            "card-type": "Card Type",
+            "address-type": "Address Type",
+            "country": "Country",
+            "relationship": "Relationship",
+            "name": "Name",
+            "domain": "Domain"
         }
 
-        element_specific = {
-            "personalInfo": {
-                "technical": ["end-date", "attachment-id", "operation"],
-                "descriptive": ["End Date", "Attachment", "Operation"]
-            },
-            "employmentInfo": {
-                "technical": ["attachment-id", "operation"],
-                "descriptive": ["Attachment", "Operation"]
-            },
-            "jobInfo": {
-                "technical": ["end-date", "attachment-id", "operation"],
-                "descriptive": ["End Date", "Attachment", "Operation"]
-            },
-            "phoneInfo": {
-                "technical": ["start-date", "end-date", "operation"],
-                "descriptive": ["Event Date", "End Date", "Operation"]
-            },
-            "emailInfo": {
-                "technical": ["start-date", "end-date", "operation"],
-                "descriptive": ["Event Date", "End Date", "Operation"]
-            },
-            "homeAddress": {
-                "technical": ["end-date", "operation"],
-                "descriptive": ["End Date", "Operation"]
-            },
-            "nationalIdCard": {
-                "technical": ["start-date", "end-date", "notes", "operation"],
-                "descriptive": ["Event Date", "End Date", "Notes", "Operation"]
-            },
-            "emergencyContactPrimary": {
-                "technical": ["start-date", "end-date", "operation"],
-                "descriptive": ["Event Date", "End Date", "Operation"]
-            },
-            "personRelationshipInfo": {
-                "technical": [
-                    "start-date",
-                    "end-date",
-                    "related-person-id-external",
-                    "attachment-id",
-                    "operation"
-                ],
-                "descriptive": [
-                    "Event Date",
-                    "End Date",
-                    "Related Person Id External",
-                    "Attachments",
-                    "Operation"
-                ]
-            },
-            "compInfo": {
-                "technical": ["start-date", "end-date", "operation"],
-                "descriptive": ["Event Date", "End Date", "Operation"]
-            },
-            "payComponentRecurring": {
-                "technical": ["start-date", "end-date", "operation"],
-                "descriptive": ["Event Date", "End Date", "Operation"]
-            },
-            "payComponentNonRecurring": {
-                "technical": ["operation"],
-                "descriptive": ["Operation"]
-            },
-            "workPermitInfo": {
-                "technical": ["start-date", "notes", "operation"],
-                "descriptive": ["Event Date", "Notes", "Operation"]
-            },
-            "globalAssignmentInfo": {
-                "technical": ["actual-end-date", "operation"],
-                "descriptive": ["Actual End Date", "Operation"]
-            }
-        }
+        return descriptive_map.get(sap_column, sap_column.replace("-", " ").title())
 
-        return element_specific.get(element_id, default_cols)
+    def _extract_field_name(self, full_field_id: str, element_id: str) -> str:
+        """Extrae el nombre del campo y lo convierte al formato SAP (kebab-case)."""
+        # Remover el prefijo del elemento
+        if full_field_id.startswith(f"{element_id}_"):
+            field_name = full_field_id[len(element_id) + 1:]
+        else:
+            field_name = full_field_id
+
+        # En este caso, el Golden Record ya usa kebab-case, así que no necesitamos conversión
+        return field_name
+
+    def _camel_to_kebab(self, camel_str: str) -> str:
+        """Convierte camelCase a kebab-case."""
+        import re
+        kebab = re.sub('([a-z0-9])([A-Z])', r'\1-\2', camel_str)
+        return kebab.lower()
