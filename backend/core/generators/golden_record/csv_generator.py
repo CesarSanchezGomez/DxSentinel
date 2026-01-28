@@ -1,70 +1,66 @@
 from typing import Dict, List, Optional
 import csv
-from .element_processor import ElementProcessor
-from .language_resolver import GoldenRecordLanguageResolver
-from .metadata_generator import MetadataGenerator  # NUEVO
-from .exceptions import GoldenRecordError
+from pathlib import Path
 
 
 class CSVGenerator:
-    """Generates golden_record_template.csv file."""
 
     def __init__(self, target_country: Optional[str] = None):
+        from .element_processor import ElementProcessor
+        from .language_resolver import GoldenRecordLanguageResolver
+        from backend.core.generators.metadata.metadata_generator import MetadataGenerator
+
         self.processor = ElementProcessor(target_country=target_country)
         self.language_resolver = GoldenRecordLanguageResolver()
-        self.metadata_gen = MetadataGenerator()  # NUEVO
+        self.metadata_gen = MetadataGenerator()
         self.target_country = target_country
 
-    def generate_template_csv(self, parsed_model: Dict, output_path: str,
-                              language_code: str) -> str:
-        """Generates CSV template with translated labels."""
-        try:
-            processed_data = self.processor.process_model(parsed_model)
-            elements = processed_data.get("elements", [])
+    def generate_template_csv(
+            self,
+            parsed_model: Dict,
+            output_path: str,
+            language_code: str
+    ) -> str:
 
-            columns = []
-            for element in elements:
-                for field in element["fields"]:
-                    columns.append({
-                        "full_id": field["full_field_id"],
-                        "field_id": field["field_id"],
-                        "node": field["node"],
-                        "is_country_specific": field.get("is_country_specific", False),
-                        "country_code": field.get("country_code"),
-                        "element_id": element["element_id"]
-                    })
+        processed_data = self.processor.process_model(parsed_model)
+        elements = processed_data.get("elements", [])
 
-            translated_labels = self._get_translated_labels(columns, language_code)
+        columns = []
+        for element in elements:
+            for field in element["fields"]:
+                columns.append({
+                    "full_id": field["full_field_id"],
+                    "field_id": field["field_id"],
+                    "node": field["node"],
+                    "is_country_specific": field.get("is_country_specific", False),
+                    "country_code": field.get("country_code"),
+                    "element_id": element["element_id"]
+                })
 
-            # Generar CSV
-            with open(output_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
-                writer = csv.writer(csvfile)
+        translated_labels = self._get_translated_labels(columns, language_code)
 
-                technical_header = [col["full_id"] for col in columns]
-                writer.writerow(technical_header)
+        with open(output_path, 'w', newline='', encoding='utf-8-sig') as csvfile:
+            writer = csv.writer(csvfile)
 
-                descriptive_header = [
-                    translated_labels.get(col["full_id"], col["field_id"])
-                    for col in columns
-                ]
-                writer.writerow(descriptive_header)
+            technical_header = [col["full_id"] for col in columns]
+            writer.writerow(technical_header)
 
-            # NUEVO: Generar metadata
-            metadata = self.metadata_gen.generate_metadata(processed_data, columns)
+            descriptive_header = [
+                translated_labels.get(col["full_id"], col["field_id"])
+                for col in columns
+            ]
+            writer.writerow(descriptive_header)
 
-            # Guardar metadata junto al CSV
-            from pathlib import Path
-            csv_path = Path(output_path)
-            metadata_path = csv_path.parent / f"{csv_path.stem}_metadata.json"
-            self.metadata_gen.save_metadata(metadata, str(metadata_path))
+        metadata = self.metadata_gen.generate_metadata(processed_data, columns)
 
-            return output_path
+        csv_path = Path(output_path)
+        metadata_path = csv_path.parent / f"{csv_path.stem}_metadata.json"
+        self.metadata_gen.save_metadata(metadata, str(metadata_path))
 
-        except Exception as e:
-            raise GoldenRecordError(f"Error generating template CSV: {str(e)}") from e
+        return output_path
 
     def _get_translated_labels(self, columns: List[Dict], language_code: str) -> Dict[str, str]:
-        """Gets translated labels for all columns."""
+
         labels_dict = {}
 
         for column in columns:

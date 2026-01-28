@@ -21,10 +21,12 @@ class ElementProcessor:
             target_country: Specific country code to include (e.g., "MEX").
                            If None, includes all countries.
         """
+        print(f"[DEBUG] ElementProcessor initialized with target_country={target_country}")  # ADD THIS
         self.field_filter = FieldFilter()
         self.global_field_ids: Set[str] = set()
         self.target_country = target_country.upper() if target_country else None
         self._normalized_target_country = self._normalize_country_code(target_country) if target_country else None
+        print(f"[DEBUG] Normalized target country: {self._normalized_target_country}")  # ADD THIS
 
     def _normalize_country_code(self, country_code: str) -> str:
         """Normalizes country code for comparison."""

@@ -1,13 +1,12 @@
-from typing import Dict, List, Set, Optional
-import re
+from typing import Dict, List
 import json
-from pathlib import Path
+from datetime import datetime
+from backend.core.generators.metadata.business_key_resolver import BusinessKeyResolver
+from backend.core.generators.metadata.field_identifier_extractor import FieldIdentifierExtractor
+from backend.core.generators.metadata.field_categorizer import FieldCategorizer
 
 
 class MetadataGenerator:
-    """Generates metadata JSON for Golden Record mapping with SAP SuccessFactors business keys."""
-
-    # Business Keys configuration según templates oficiales de SAP SuccessFactors
     SAP_BUSINESS_KEYS = {
         "personInfo": {
             "keys": ["personIdExternal"],
@@ -70,8 +69,8 @@ class MetadataGenerator:
             "references": "personInfo"
         },
         "employmentInfo": {
-            "keys": ["personIdExternal", "userId", "startDate"],
-            "sap_format": ["person-id-external", "user-id", "start-date"],
+            "keys": ["personIdExternal", "userId"],
+            "sap_format": ["person-id-external", "user-id"],
             "is_master": False,
             "references": "personInfo"
         },
@@ -126,11 +125,14 @@ class MetadataGenerator:
     }
 
     def __init__(self):
-        pass
+        self.key_resolver = BusinessKeyResolver()
+        self.field_extractor = FieldIdentifierExtractor()
+        self.field_categorizer = FieldCategorizer(self.SAP_BUSINESS_KEYS)
 
     def generate_metadata(self, processed_data: Dict, columns: List[Dict]) -> Dict:
-        """Generates complete metadata for Golden Record."""
+
         elements = processed_data.get("elements", [])
+        available_headers = [col["full_id"] for col in columns]
 
         metadata = {
             "version": "2.0.0",
@@ -147,17 +149,21 @@ class MetadataGenerator:
             metadata["elements"][element_id] = element_metadata
 
         metadata["field_catalog"] = self._build_field_catalog(columns, metadata["elements"])
-        metadata["business_keys"] = self._build_business_keys_mapping(metadata["elements"], columns)
+        metadata["business_keys"] = self._build_business_keys_mapping(
+            metadata["elements"],
+            available_headers
+        )
         metadata["layout_split_config"] = self._build_layout_split_config(
             metadata["elements"],
             metadata["field_catalog"],
-            metadata["business_keys"]
+            metadata["business_keys"],
+            columns
         )
 
         return metadata
 
     def _analyze_element(self, element: Dict, all_columns: List[Dict]) -> Dict:
-        """Analyzes an element using SAP business keys configuration."""
+
         element_id = element["element_id"]
         fields = element["fields"]
 
@@ -174,7 +180,7 @@ class MetadataGenerator:
         }
 
     def _build_field_catalog(self, columns: List[Dict], elements_meta: Dict) -> Dict:
-        """Builds complete field catalog."""
+
         catalog = {}
 
         for column in columns:
@@ -183,22 +189,28 @@ class MetadataGenerator:
             field_id = column["field_id"]
 
             element_meta = elements_meta.get(element_id, {})
-            is_business_key = field_id in element_meta.get("business_keys", [])
+
+            is_business_key = self.field_categorizer.is_business_key(element_id, field_id)
+            is_hris = self.field_categorizer.is_hris_field(element_id, field_id)
 
             catalog[full_field_id] = {
                 "element": element_id,
                 "field": field_id,
                 "is_business_key": is_business_key,
+                "is_hris_field": is_hris,
                 "data_type": self._infer_data_type(field_id),
                 "category": self._categorize_field(field_id)
             }
 
         return catalog
 
-    def _build_business_keys_mapping(self, elements_meta: Dict, columns: List[Dict]) -> Dict:
-        """Builds business keys mapping for layout splitting."""
+    def _build_business_keys_mapping(
+            self,
+            elements_meta: Dict,
+            available_columns: List[str]
+    ) -> Dict:
+
         mappings = {}
-        available_columns = [col["full_id"] for col in columns]
 
         for elem_id, meta in elements_meta.items():
             business_keys = meta.get("business_keys", [])
@@ -210,11 +222,9 @@ class MetadataGenerator:
 
             key_mappings = []
             for golden_key, sap_key in zip(business_keys, sap_format_keys):
-                # Determinar la columna en el Golden Record
-                golden_column = self._resolve_golden_column(
-                    elem_id,
-                    golden_key,
+                golden_column = self.key_resolver.resolve_golden_column(
                     sap_key,
+                    None,
                     available_columns
                 )
 
@@ -234,118 +244,60 @@ class MetadataGenerator:
 
         return mappings
 
-    def _resolve_golden_column(
+    def _build_layout_split_config(
             self,
-            elem_id: str,
-            golden_key: str,
-            sap_key: str,
-            available_columns: List[str]
-    ) -> Optional[str]:
-        """
-        Resuelve la columna del Golden Record para una business key.
+            elements_meta: Dict,
+            field_catalog: Dict,
+            business_keys: Dict,
+            all_columns: List[Dict]
+    ) -> Dict:
 
-        Lógica de resolución:
-        1. user-id → personInfo_person-id-external
-        2. person-id-external → personInfo_person-id-external
-        3. personInfo.person-id-external → personInfo_person-id-external
-        4. Otros campos con referencia → buscar en el elemento referenciado
-        5. Campos locales → buscar en el elemento actual
-        """
-
-        # Caso especial: user-id o person-id-external sin prefijo
-        if sap_key in ["user-id", "person-id-external"]:
-            if "personInfo_person-id-external" in available_columns:
-                return "personInfo_person-id-external"
-
-        # Caso: Referencias con punto (personInfo.person-id-external)
-        if "." in sap_key:
-            ref_elem, ref_field = sap_key.split(".", 1)
-            # El Golden Record usa kebab-case, no camelCase
-            golden_column = f"{ref_elem}_{ref_field}"
-
-            if golden_column in available_columns:
-                return golden_column
-
-        # Caso: Campo local en el elemento actual
-        # Intentar con el golden_key directamente
-        candidate = f"{elem_id}_{golden_key}"
-        if candidate in available_columns:
-            return candidate
-
-        # Intentar convertir golden_key a kebab-case si está en camelCase
-        kebab_key = self._camel_to_kebab_simple(golden_key)
-        candidate_kebab = f"{elem_id}_{kebab_key}"
-        if candidate_kebab in available_columns:
-            return candidate_kebab
-
-        # Buscar coincidencias parciales
-        for col in available_columns:
-            if col.endswith(f"_{golden_key}") or col.endswith(f"_{kebab_key}"):
-                return col
-
-        return None
-
-    def _camel_to_kebab_simple(self, camel_str: str) -> str:
-        """Convierte camelCase a kebab-case de forma simple."""
-        import re
-        kebab = re.sub('([a-z0-9])([A-Z])', r'\1-\2', camel_str)
-        return kebab.lower()
-
-    def _sap_to_camel_case(self, sap_field: str) -> str:
-        """Convierte formato SAP (kebab-case) a camelCase usado en Golden Record."""
-        # Casos especiales conocidos
-        special_cases = {
-            "person-id-external": "personIdExternal",
-            "user-id": "userId",
-            "start-date": "startDate",
-            "end-date": "endDate",
-            "card-type": "cardType",
-            "address-type": "addressType",
-            "phone-type": "phoneType",
-            "email-address": "emailType",
-            "related-person-id-external": "relatedPersonIdExternal",
-            "seq-number": "seqNumber",
-            "pay-component": "payComponent",
-            "pay-component-code": "payComponentCode",
-            "pay-date": "payDate",
-            "relationship-type": "relationshipType",
-            "document-type": "documentType",
-            "document-number": "documentNumber",
-            "issue-date": "issueDate"
-        }
-
-        if sap_field in special_cases:
-            return special_cases[sap_field]
-
-        # Conversión genérica para otros casos
-        parts = sap_field.split('-')
-        return parts[0] + ''.join(word.capitalize() for word in parts[1:])
-
-    def _build_layout_split_config(self, elements_meta: Dict, field_catalog: Dict,
-                                   business_keys: Dict) -> Dict:
-        """Builds configuration for splitting Golden Record into layouts."""
         config = {}
+        grouped_by_entity = {}
 
-        for elem_id, meta in elements_meta.items():
-            element_fields = [
-                field_id for field_id, field_meta in field_catalog.items()
-                if field_meta["element"] == elem_id
-            ]
+        for column in all_columns:
+            full_field_id = column["full_id"]
 
-            business_key_config = business_keys.get(elem_id, {})
+            entity_id, field_id, country_code = self.field_extractor.extract_entity_and_field(
+                full_field_id
+            )
 
-            config[elem_id] = {
-                "element_id": elem_id,
-                "fields": element_fields,
-                "field_count": len(element_fields),
+            suffix = self.field_extractor.should_split_by_suffix(entity_id, field_id)
+
+            if suffix:
+                group_key = f"{entity_id}_{suffix}"
+            else:
+                group_key = entity_id
+
+            if group_key not in grouped_by_entity:
+                grouped_by_entity[group_key] = []
+
+            grouped_by_entity[group_key].append(full_field_id)
+
+        for group_key, fields in grouped_by_entity.items():
+            if "_" in group_key and group_key.split("_")[0] in self.field_extractor.SPECIAL_PREFIXES:
+                entity_id = group_key.split("_")[0]
+                suffix = group_key.split("_", 1)[1]
+                filename = f"{group_key}_template.csv"
+            else:
+                entity_id = group_key
+                filename = f"{entity_id}_template.csv"
+
+            business_key_config = business_keys.get(entity_id, {})
+
+            config[group_key] = {
+                "element_id": entity_id,
+                "group_key": group_key,
+                "fields": fields,
+                "field_count": len(fields),
                 "business_keys": business_key_config.get("business_keys", []),
-                "layout_filename": f"{elem_id}_template.csv"
+                "layout_filename": filename
             }
 
         return config
 
     def _infer_data_type(self, field_id: str) -> str:
-        """Infers data type from field ID."""
+
         field_lower = field_id.lower()
 
         if "date" in field_lower:
@@ -362,7 +314,7 @@ class MetadataGenerator:
             return "string"
 
     def _categorize_field(self, field_id: str) -> str:
-        """Categorizes field for organization."""
+
         field_lower = field_id.lower()
 
         if any(k in field_lower for k in ["id", "code", "number"]):
@@ -377,12 +329,11 @@ class MetadataGenerator:
             return "operational"
 
     def _get_timestamp(self) -> str:
-        """Gets current timestamp in ISO format."""
-        from datetime import datetime
+
         return datetime.utcnow().isoformat() + 'Z'
 
     def save_metadata(self, metadata: Dict, output_path: str) -> str:
-        """Saves metadata to JSON file."""
+
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
         return output_path

@@ -1,0 +1,2199 @@
+{
+  "version": "2.0.0",
+  "generated_at": "2026-01-28T22:04:53.776413Z",
+  "elements": {
+    "personInfo": {
+      "element_id": "personInfo",
+      "is_master": true,
+      "business_keys": [
+        "personIdExternal"
+      ],
+      "sap_format_keys": [
+        "user-id"
+      ],
+      "references": null,
+      "field_count": 6,
+      "description": "Master entity - uses user-id as primary key"
+    },
+    "personalInfo": {
+      "element_id": "personalInfo",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "startDate"
+      ],
+      "sap_format_keys": [
+        "personInfo.person-id-external",
+        "start-date"
+      ],
+      "references": "personInfo",
+      "field_count": 16,
+      "description": "Standard personalInfo entity"
+    },
+    "employmentInfo": {
+      "element_id": "employmentInfo",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "userId"
+      ],
+      "sap_format_keys": [
+        "person-id-external",
+        "user-id"
+      ],
+      "references": "personInfo",
+      "field_count": 5,
+      "description": "Standard employmentInfo entity"
+    },
+    "jobInfo": {
+      "element_id": "jobInfo",
+      "is_master": false,
+      "business_keys": [
+        "userId",
+        "startDate",
+        "seqNumber"
+      ],
+      "sap_format_keys": [
+        "user-id",
+        "start-date",
+        "seq-number"
+      ],
+      "references": "employmentInfo",
+      "field_count": 33,
+      "description": "Standard jobInfo entity"
+    },
+    "phoneInfo": {
+      "element_id": "phoneInfo",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "phoneType"
+      ],
+      "sap_format_keys": [
+        "personInfo.person-id-external",
+        "phone-type"
+      ],
+      "references": "personInfo",
+      "field_count": 4,
+      "description": "Standard phoneInfo entity"
+    },
+    "emailInfo": {
+      "element_id": "emailInfo",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "emailType"
+      ],
+      "sap_format_keys": [
+        "personInfo.person-id-external",
+        "email-type"
+      ],
+      "references": "personInfo",
+      "field_count": 3,
+      "description": "Standard emailInfo entity"
+    },
+    "nationalIdCard": {
+      "element_id": "nationalIdCard",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "country",
+        "cardType"
+      ],
+      "sap_format_keys": [
+        "personInfo.person-id-external",
+        "country",
+        "card-type"
+      ],
+      "references": "personInfo",
+      "field_count": 4,
+      "description": "Standard nationalIdCard entity"
+    },
+    "emergencyContactPrimary": {
+      "element_id": "emergencyContactPrimary",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "name",
+        "relationship"
+      ],
+      "sap_format_keys": [
+        "personInfo.person-id-external",
+        "name",
+        "relationship"
+      ],
+      "references": "personInfo",
+      "field_count": 12,
+      "description": "Standard emergencyContactPrimary entity"
+    },
+    "personRelationshipInfo": {
+      "element_id": "personRelationshipInfo",
+      "is_master": false,
+      "business_keys": [
+        "personIdExternal",
+        "relatedPersonIdExternal",
+        "startDate"
+      ],
+      "sap_format_keys": [
+        "personInfo.person-id-external",
+        "related-person-id-external",
+        "start-date"
+      ],
+      "references": "personInfo",
+      "field_count": 5,
+      "description": "Standard personRelationshipInfo entity"
+    },
+    "compInfo": {
+      "element_id": "compInfo",
+      "is_master": false,
+      "business_keys": [
+        "userId",
+        "startDate",
+        "seqNumber"
+      ],
+      "sap_format_keys": [
+        "user-id",
+        "start-date",
+        "seq-number"
+      ],
+      "references": "employmentInfo",
+      "field_count": 3,
+      "description": "Standard compInfo entity"
+    },
+    "payComponentRecurring": {
+      "element_id": "payComponentRecurring",
+      "is_master": false,
+      "business_keys": [
+        "userId",
+        "payComponent",
+        "startDate",
+        "seqNumber"
+      ],
+      "sap_format_keys": [
+        "user-id",
+        "pay-component",
+        "start-date",
+        "seq-number"
+      ],
+      "references": "employmentInfo",
+      "field_count": 5,
+      "description": "Standard payComponentRecurring entity"
+    },
+    "payComponentNonRecurring": {
+      "element_id": "payComponentNonRecurring",
+      "is_master": false,
+      "business_keys": [
+        "userId",
+        "payComponentCode",
+        "payDate"
+      ],
+      "sap_format_keys": [
+        "user-id",
+        "pay-component-code",
+        "pay-date"
+      ],
+      "references": "employmentInfo",
+      "field_count": 4,
+      "description": "Standard payComponentNonRecurring entity"
+    },
+    "globalAssignmentInfo": {
+      "element_id": "globalAssignmentInfo",
+      "is_master": false,
+      "business_keys": [
+        "userId",
+        "startDate"
+      ],
+      "sap_format_keys": [
+        "user-id",
+        "start-date"
+      ],
+      "references": "employmentInfo",
+      "field_count": 4,
+      "description": "Standard globalAssignmentInfo entity"
+    },
+    "workPermitInfo_CURP": {
+      "element_id": "workPermitInfo_CURP",
+      "is_master": false,
+      "business_keys": [],
+      "sap_format_keys": [],
+      "references": null,
+      "field_count": 5,
+      "description": "Standard workPermitInfo_CURP entity"
+    },
+    "workPermitInfo_RFC": {
+      "element_id": "workPermitInfo_RFC",
+      "is_master": false,
+      "business_keys": [],
+      "sap_format_keys": [],
+      "references": null,
+      "field_count": 5,
+      "description": "Standard workPermitInfo_RFC entity"
+    },
+    "MEX_homeAddress_home": {
+      "element_id": "MEX_homeAddress_home",
+      "is_master": false,
+      "business_keys": [],
+      "sap_format_keys": [],
+      "references": null,
+      "field_count": 9,
+      "description": "Standard MEX_homeAddress_home entity"
+    },
+    "MEX_homeAddress_fiscal": {
+      "element_id": "MEX_homeAddress_fiscal",
+      "is_master": false,
+      "business_keys": [],
+      "sap_format_keys": [],
+      "references": null,
+      "field_count": 9,
+      "description": "Standard MEX_homeAddress_fiscal entity"
+    },
+    "MEX_globalInfo": {
+      "element_id": "MEX_globalInfo",
+      "is_master": false,
+      "business_keys": [],
+      "sap_format_keys": [],
+      "references": null,
+      "field_count": 7,
+      "description": "Standard MEX_globalInfo entity"
+    },
+    "MEX_jobInfo": {
+      "element_id": "MEX_jobInfo",
+      "is_master": false,
+      "business_keys": [],
+      "sap_format_keys": [],
+      "references": null,
+      "field_count": 5,
+      "description": "Standard MEX_jobInfo entity"
+    }
+  },
+  "field_catalog": {
+    "personInfo_country-of-birth": {
+      "element": "personInfo",
+      "field": "country-of-birth",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personInfo_date-of-birth": {
+      "element": "personInfo",
+      "field": "date-of-birth",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "personInfo_date-of-death": {
+      "element": "personInfo",
+      "field": "date-of-death",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "personInfo_person-id-external": {
+      "element": "personInfo",
+      "field": "person-id-external",
+      "is_business_key": false,
+      "is_hris_field": true,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "personInfo_place-of-birth": {
+      "element": "personInfo",
+      "field": "place-of-birth",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personInfo_region-of-birth": {
+      "element": "personInfo",
+      "field": "region-of-birth",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_display-name": {
+      "element": "personalInfo",
+      "field": "display-name",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "personalInfo_first-name": {
+      "element": "personalInfo",
+      "field": "first-name",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "personalInfo_last-name": {
+      "element": "personalInfo",
+      "field": "last-name",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "personalInfo_middle-name": {
+      "element": "personalInfo",
+      "field": "middle-name",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "personalInfo_second-last-name": {
+      "element": "personalInfo",
+      "field": "second-last-name",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "personalInfo_gender": {
+      "element": "personalInfo",
+      "field": "gender",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_start-date": {
+      "element": "personalInfo",
+      "field": "start-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "personalInfo_challenge-status": {
+      "element": "personalInfo",
+      "field": "challenge-status",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_marital-status": {
+      "element": "personalInfo",
+      "field": "marital-status",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_nationality": {
+      "element": "personalInfo",
+      "field": "nationality",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_native-preferred-lang": {
+      "element": "personalInfo",
+      "field": "native-preferred-lang",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_salutation": {
+      "element": "personalInfo",
+      "field": "salutation",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_second-nationality": {
+      "element": "personalInfo",
+      "field": "second-nationality",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_since": {
+      "element": "personalInfo",
+      "field": "since",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personalInfo_custom-string2": {
+      "element": "personalInfo",
+      "field": "custom-string2",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "custom"
+    },
+    "personalInfo_custom-string3": {
+      "element": "personalInfo",
+      "field": "custom-string3",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "custom"
+    },
+    "employmentInfo_originalStartDate": {
+      "element": "employmentInfo",
+      "field": "originalStartDate",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "employmentInfo_seniorityDate": {
+      "element": "employmentInfo",
+      "field": "seniorityDate",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "employmentInfo_serviceDate": {
+      "element": "employmentInfo",
+      "field": "serviceDate",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "employmentInfo_start-date": {
+      "element": "employmentInfo",
+      "field": "start-date",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "employmentInfo_employeeFirstEmployment": {
+      "element": "employmentInfo",
+      "field": "employeeFirstEmployment",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_holiday-calendar-code": {
+      "element": "jobInfo",
+      "field": "holiday-calendar-code",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "jobInfo_job-code": {
+      "element": "jobInfo",
+      "field": "job-code",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "jobInfo_manager-id": {
+      "element": "jobInfo",
+      "field": "manager-id",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "jobInfo_time-type-profile-code": {
+      "element": "jobInfo",
+      "field": "time-type-profile-code",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "jobInfo_workschedule-code": {
+      "element": "jobInfo",
+      "field": "workschedule-code",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "jobInfo_contract-end-date": {
+      "element": "jobInfo",
+      "field": "contract-end-date",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "jobInfo_hireDate": {
+      "element": "jobInfo",
+      "field": "hireDate",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "jobInfo_start-date": {
+      "element": "jobInfo",
+      "field": "start-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "jobInfo_business-unit": {
+      "element": "jobInfo",
+      "field": "business-unit",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_company": {
+      "element": "jobInfo",
+      "field": "company",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_cost-center": {
+      "element": "jobInfo",
+      "field": "cost-center",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_country-of-company": {
+      "element": "jobInfo",
+      "field": "country-of-company",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_department": {
+      "element": "jobInfo",
+      "field": "department",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_division": {
+      "element": "jobInfo",
+      "field": "division",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_employee-class": {
+      "element": "jobInfo",
+      "field": "employee-class",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_fte": {
+      "element": "jobInfo",
+      "field": "fte",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_is-fulltime-employee": {
+      "element": "jobInfo",
+      "field": "is-fulltime-employee",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "jobInfo_job-title": {
+      "element": "jobInfo",
+      "field": "job-title",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "jobInfo_location": {
+      "element": "jobInfo",
+      "field": "location",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_pay-grade": {
+      "element": "jobInfo",
+      "field": "pay-grade",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_payScaleArea": {
+      "element": "jobInfo",
+      "field": "payScaleArea",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_payScaleGroup": {
+      "element": "jobInfo",
+      "field": "payScaleGroup",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_payScaleLevel": {
+      "element": "jobInfo",
+      "field": "payScaleLevel",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_payScaleType": {
+      "element": "jobInfo",
+      "field": "payScaleType",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_position": {
+      "element": "jobInfo",
+      "field": "position",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_regular-temp": {
+      "element": "jobInfo",
+      "field": "regular-temp",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_standard-hours": {
+      "element": "jobInfo",
+      "field": "standard-hours",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_time-recording-variant": {
+      "element": "jobInfo",
+      "field": "time-recording-variant",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_timezone": {
+      "element": "jobInfo",
+      "field": "timezone",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_workingDaysPerWeek": {
+      "element": "jobInfo",
+      "field": "workingDaysPerWeek",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "jobInfo_custom-double1": {
+      "element": "jobInfo",
+      "field": "custom-double1",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "custom"
+    },
+    "jobInfo_custom-string2": {
+      "element": "jobInfo",
+      "field": "custom-string2",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "custom"
+    },
+    "jobInfo_custom-string3": {
+      "element": "jobInfo",
+      "field": "custom-string3",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "custom"
+    },
+    "phoneInfo_phone-number": {
+      "element": "phoneInfo",
+      "field": "phone-number",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "integer",
+      "category": "identifier"
+    },
+    "phoneInfo_extension": {
+      "element": "phoneInfo",
+      "field": "extension",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "phoneInfo_isPrimary": {
+      "element": "phoneInfo",
+      "field": "isPrimary",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "phoneInfo_phone-type": {
+      "element": "phoneInfo",
+      "field": "phone-type",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emailInfo_email-address": {
+      "element": "emailInfo",
+      "field": "email-address",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emailInfo_email-type": {
+      "element": "emailInfo",
+      "field": "email-type",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emailInfo_isPrimary": {
+      "element": "emailInfo",
+      "field": "isPrimary",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "nationalIdCard_national-id": {
+      "element": "nationalIdCard",
+      "field": "national-id",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "nationalIdCard_card-type": {
+      "element": "nationalIdCard",
+      "field": "card-type",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "nationalIdCard_country": {
+      "element": "nationalIdCard",
+      "field": "country",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "nationalIdCard_isPrimary": {
+      "element": "nationalIdCard",
+      "field": "isPrimary",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_name": {
+      "element": "emergencyContactPrimary",
+      "field": "name",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "emergencyContactPrimary_isDependent": {
+      "element": "emergencyContactPrimary",
+      "field": "isDependent",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_address": {
+      "element": "emergencyContactPrimary",
+      "field": "address",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_dateOfBirth": {
+      "element": "emergencyContactPrimary",
+      "field": "dateOfBirth",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "emergencyContactPrimary_email": {
+      "element": "emergencyContactPrimary",
+      "field": "email",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_isAddSameAsEmployee": {
+      "element": "emergencyContactPrimary",
+      "field": "isAddSameAsEmployee",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_isDisabled": {
+      "element": "emergencyContactPrimary",
+      "field": "isDisabled",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_isStudent": {
+      "element": "emergencyContactPrimary",
+      "field": "isStudent",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_phone": {
+      "element": "emergencyContactPrimary",
+      "field": "phone",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_primary_flag": {
+      "element": "emergencyContactPrimary",
+      "field": "primary_flag",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_relationship": {
+      "element": "emergencyContactPrimary",
+      "field": "relationship",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "emergencyContactPrimary_second-phone": {
+      "element": "emergencyContactPrimary",
+      "field": "second-phone",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "personRelationshipInfo_is-accompanying-dependent": {
+      "element": "personRelationshipInfo",
+      "field": "is-accompanying-dependent",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "personRelationshipInfo_start-date": {
+      "element": "personRelationshipInfo",
+      "field": "start-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "personRelationshipInfo_is-address-same-as-person": {
+      "element": "personRelationshipInfo",
+      "field": "is-address-same-as-person",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "personRelationshipInfo_is-beneficiary": {
+      "element": "personRelationshipInfo",
+      "field": "is-beneficiary",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "boolean",
+      "category": "operational"
+    },
+    "personRelationshipInfo_relationship-type": {
+      "element": "personRelationshipInfo",
+      "field": "relationship-type",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "compInfo_seq-number": {
+      "element": "compInfo",
+      "field": "seq-number",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "integer",
+      "category": "identifier"
+    },
+    "compInfo_start-date": {
+      "element": "compInfo",
+      "field": "start-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "compInfo_pay-group": {
+      "element": "compInfo",
+      "field": "pay-group",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "payComponentRecurring_currency-code": {
+      "element": "payComponentRecurring",
+      "field": "currency-code",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "payComponentRecurring_start-date": {
+      "element": "payComponentRecurring",
+      "field": "start-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "payComponentRecurring_frequency": {
+      "element": "payComponentRecurring",
+      "field": "frequency",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "payComponentRecurring_pay-component": {
+      "element": "payComponentRecurring",
+      "field": "pay-component",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "payComponentRecurring_paycompvalue": {
+      "element": "payComponentRecurring",
+      "field": "paycompvalue",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "payComponentNonRecurring_currency-code": {
+      "element": "payComponentNonRecurring",
+      "field": "currency-code",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "payComponentNonRecurring_pay-component-code": {
+      "element": "payComponentNonRecurring",
+      "field": "pay-component-code",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "payComponentNonRecurring_pay-date": {
+      "element": "payComponentNonRecurring",
+      "field": "pay-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "payComponentNonRecurring_value": {
+      "element": "payComponentNonRecurring",
+      "field": "value",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "globalAssignmentInfo_planned-end-date": {
+      "element": "globalAssignmentInfo",
+      "field": "planned-end-date",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "globalAssignmentInfo_start-date": {
+      "element": "globalAssignmentInfo",
+      "field": "start-date",
+      "is_business_key": true,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "globalAssignmentInfo_assignment-type": {
+      "element": "globalAssignmentInfo",
+      "field": "assignment-type",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "globalAssignmentInfo_company": {
+      "element": "globalAssignmentInfo",
+      "field": "company",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "workPermitInfo_CURP_document-number": {
+      "element": "workPermitInfo_CURP",
+      "field": "document-number",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "integer",
+      "category": "identifier"
+    },
+    "workPermitInfo_CURP_issue-date": {
+      "element": "workPermitInfo_CURP",
+      "field": "issue-date",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "workPermitInfo_CURP_country": {
+      "element": "workPermitInfo_CURP",
+      "field": "country",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "workPermitInfo_CURP_document-title": {
+      "element": "workPermitInfo_CURP",
+      "field": "document-title",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "workPermitInfo_CURP_document-type": {
+      "element": "workPermitInfo_CURP",
+      "field": "document-type",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "workPermitInfo_RFC_document-number": {
+      "element": "workPermitInfo_RFC",
+      "field": "document-number",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "integer",
+      "category": "identifier"
+    },
+    "workPermitInfo_RFC_issue-date": {
+      "element": "workPermitInfo_RFC",
+      "field": "issue-date",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "workPermitInfo_RFC_country": {
+      "element": "workPermitInfo_RFC",
+      "field": "country",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "workPermitInfo_RFC_document-title": {
+      "element": "workPermitInfo_RFC",
+      "field": "document-title",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "descriptive"
+    },
+    "workPermitInfo_RFC_document-type": {
+      "element": "workPermitInfo_RFC",
+      "field": "document-type",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_start-date_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_start-date_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "MEX_homeAddress_home_MEX_address1_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_address1_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_address2_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_address2_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_address3_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_address3_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_address4_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_address4_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_city_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_city_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_country_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_country_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_state_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_state_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_home_MEX_zip-code_csf": {
+      "element": "MEX_homeAddress_home",
+      "field": "MEX_zip-code_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "MEX_homeAddress_fiscal_MEX_start-date_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_start-date_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "MEX_homeAddress_fiscal_MEX_address1_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_address1_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_address2_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_address2_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_address3_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_address3_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_address4_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_address4_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_city_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_city_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_country_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_country_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_state_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_state_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_homeAddress_fiscal_MEX_zip-code_csf": {
+      "element": "MEX_homeAddress_fiscal",
+      "field": "MEX_zip-code_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "identifier"
+    },
+    "MEX_globalInfo_MEX_gender-country-specific_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_gender-country-specific_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_globalInfo_MEX_start-date_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_start-date_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "MEX_globalInfo_MEX_genericString2_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_genericString2_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_globalInfo_MEX_genericString5_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_genericString5_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_globalInfo_MEX_genericString6_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_genericString6_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_globalInfo_MEX_genericString7_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_genericString7_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_globalInfo_MEX_custom-string1_csf": {
+      "element": "MEX_globalInfo",
+      "field": "MEX_custom-string1_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "custom"
+    },
+    "MEX_jobInfo_MEX_start-date_csf": {
+      "element": "MEX_jobInfo",
+      "field": "MEX_start-date_csf",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "date",
+      "category": "temporal"
+    },
+    "MEX_jobInfo_contract-type": {
+      "element": "MEX_jobInfo",
+      "field": "contract-type",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_jobInfo_country-of-company": {
+      "element": "MEX_jobInfo",
+      "field": "country-of-company",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_jobInfo_payScaleArea": {
+      "element": "MEX_jobInfo",
+      "field": "payScaleArea",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    },
+    "MEX_jobInfo_payScaleType": {
+      "element": "MEX_jobInfo",
+      "field": "payScaleType",
+      "is_business_key": false,
+      "is_hris_field": false,
+      "data_type": "string",
+      "category": "operational"
+    }
+  },
+  "business_keys": {
+    "personInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "personIdExternal",
+          "is_foreign": false
+        }
+      ],
+      "references": null,
+      "is_master": true
+    },
+    "personalInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "employmentInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "jobInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "compInfo_seq-number",
+          "sap_column": "seq-number",
+          "field_name": "seqNumber",
+          "is_foreign": false
+        }
+      ],
+      "references": "employmentInfo",
+      "is_master": false
+    },
+    "phoneInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "phoneInfo_phone-type",
+          "sap_column": "phone-type",
+          "field_name": "phoneType",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "emailInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "emailInfo_email-type",
+          "sap_column": "email-type",
+          "field_name": "emailType",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "nationalIdCard": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "nationalIdCard_country",
+          "sap_column": "country",
+          "field_name": "country",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "nationalIdCard_card-type",
+          "sap_column": "card-type",
+          "field_name": "cardType",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "emergencyContactPrimary": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "personalInfo_display-name",
+          "sap_column": "name",
+          "field_name": "name",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "emergencyContactPrimary_relationship",
+          "sap_column": "relationship",
+          "field_name": "relationship",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "personRelationshipInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        }
+      ],
+      "references": "personInfo",
+      "is_master": false
+    },
+    "compInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "compInfo_seq-number",
+          "sap_column": "seq-number",
+          "field_name": "seqNumber",
+          "is_foreign": false
+        }
+      ],
+      "references": "employmentInfo",
+      "is_master": false
+    },
+    "payComponentRecurring": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "payComponentRecurring_pay-component",
+          "sap_column": "pay-component",
+          "field_name": "payComponent",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "compInfo_seq-number",
+          "sap_column": "seq-number",
+          "field_name": "seqNumber",
+          "is_foreign": false
+        }
+      ],
+      "references": "employmentInfo",
+      "is_master": false
+    },
+    "payComponentNonRecurring": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "payComponentNonRecurring_pay-component-code",
+          "sap_column": "pay-component-code",
+          "field_name": "payComponentCode",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "payComponentNonRecurring_pay-date",
+          "sap_column": "pay-date",
+          "field_name": "payDate",
+          "is_foreign": false
+        }
+      ],
+      "references": "employmentInfo",
+      "is_master": false
+    },
+    "globalAssignmentInfo": {
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        }
+      ],
+      "references": "employmentInfo",
+      "is_master": false
+    }
+  },
+  "layout_split_config": {
+    "personInfo": {
+      "element_id": "personInfo",
+      "group_key": "personInfo",
+      "fields": [
+        "personInfo_country-of-birth",
+        "personInfo_date-of-birth",
+        "personInfo_date-of-death",
+        "personInfo_person-id-external",
+        "personInfo_place-of-birth",
+        "personInfo_region-of-birth"
+      ],
+      "field_count": 6,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "personIdExternal",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "personInfo_template.csv"
+    },
+    "personalInfo": {
+      "element_id": "personalInfo",
+      "group_key": "personalInfo",
+      "fields": [
+        "personalInfo_display-name",
+        "personalInfo_first-name",
+        "personalInfo_last-name",
+        "personalInfo_middle-name",
+        "personalInfo_second-last-name",
+        "personalInfo_gender",
+        "personalInfo_start-date",
+        "personalInfo_challenge-status",
+        "personalInfo_marital-status",
+        "personalInfo_nationality",
+        "personalInfo_native-preferred-lang",
+        "personalInfo_salutation",
+        "personalInfo_second-nationality",
+        "personalInfo_since",
+        "personalInfo_custom-string2",
+        "personalInfo_custom-string3"
+      ],
+      "field_count": 16,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "personalInfo_template.csv"
+    },
+    "employmentInfo": {
+      "element_id": "employmentInfo",
+      "group_key": "employmentInfo",
+      "fields": [
+        "employmentInfo_originalStartDate",
+        "employmentInfo_seniorityDate",
+        "employmentInfo_serviceDate",
+        "employmentInfo_start-date",
+        "employmentInfo_employeeFirstEmployment"
+      ],
+      "field_count": 5,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "employmentInfo_template.csv"
+    },
+    "jobInfo": {
+      "element_id": "jobInfo",
+      "group_key": "jobInfo",
+      "fields": [
+        "jobInfo_holiday-calendar-code",
+        "jobInfo_job-code",
+        "jobInfo_manager-id",
+        "jobInfo_time-type-profile-code",
+        "jobInfo_workschedule-code",
+        "jobInfo_contract-end-date",
+        "jobInfo_hireDate",
+        "jobInfo_start-date",
+        "jobInfo_business-unit",
+        "jobInfo_company",
+        "jobInfo_cost-center",
+        "jobInfo_country-of-company",
+        "jobInfo_department",
+        "jobInfo_division",
+        "jobInfo_employee-class",
+        "jobInfo_fte",
+        "jobInfo_is-fulltime-employee",
+        "jobInfo_job-title",
+        "jobInfo_location",
+        "jobInfo_pay-grade",
+        "jobInfo_payScaleArea",
+        "jobInfo_payScaleGroup",
+        "jobInfo_payScaleLevel",
+        "jobInfo_payScaleType",
+        "jobInfo_position",
+        "jobInfo_regular-temp",
+        "jobInfo_standard-hours",
+        "jobInfo_time-recording-variant",
+        "jobInfo_timezone",
+        "jobInfo_workingDaysPerWeek",
+        "jobInfo_custom-double1",
+        "jobInfo_custom-string2",
+        "jobInfo_custom-string3",
+        "MEX_jobInfo_MEX_start-date_csf",
+        "MEX_jobInfo_contract-type",
+        "MEX_jobInfo_country-of-company",
+        "MEX_jobInfo_payScaleArea",
+        "MEX_jobInfo_payScaleType"
+      ],
+      "field_count": 38,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "compInfo_seq-number",
+          "sap_column": "seq-number",
+          "field_name": "seqNumber",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "jobInfo_template.csv"
+    },
+    "phoneInfo": {
+      "element_id": "phoneInfo",
+      "group_key": "phoneInfo",
+      "fields": [
+        "phoneInfo_phone-number",
+        "phoneInfo_extension",
+        "phoneInfo_isPrimary",
+        "phoneInfo_phone-type"
+      ],
+      "field_count": 4,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "phoneInfo_phone-type",
+          "sap_column": "phone-type",
+          "field_name": "phoneType",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "phoneInfo_template.csv"
+    },
+    "emailInfo": {
+      "element_id": "emailInfo",
+      "group_key": "emailInfo",
+      "fields": [
+        "emailInfo_email-address",
+        "emailInfo_email-type",
+        "emailInfo_isPrimary"
+      ],
+      "field_count": 3,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "emailInfo_email-type",
+          "sap_column": "email-type",
+          "field_name": "emailType",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "emailInfo_template.csv"
+    },
+    "nationalIdCard": {
+      "element_id": "nationalIdCard",
+      "group_key": "nationalIdCard",
+      "fields": [
+        "nationalIdCard_national-id",
+        "nationalIdCard_card-type",
+        "nationalIdCard_country",
+        "nationalIdCard_isPrimary"
+      ],
+      "field_count": 4,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "nationalIdCard_country",
+          "sap_column": "country",
+          "field_name": "country",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "nationalIdCard_card-type",
+          "sap_column": "card-type",
+          "field_name": "cardType",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "nationalIdCard_template.csv"
+    },
+    "emergencyContactPrimary": {
+      "element_id": "emergencyContactPrimary",
+      "group_key": "emergencyContactPrimary",
+      "fields": [
+        "emergencyContactPrimary_name",
+        "emergencyContactPrimary_isDependent",
+        "emergencyContactPrimary_address",
+        "emergencyContactPrimary_dateOfBirth",
+        "emergencyContactPrimary_email",
+        "emergencyContactPrimary_isAddSameAsEmployee",
+        "emergencyContactPrimary_isDisabled",
+        "emergencyContactPrimary_isStudent",
+        "emergencyContactPrimary_phone",
+        "emergencyContactPrimary_primary_flag",
+        "emergencyContactPrimary_relationship",
+        "emergencyContactPrimary_second-phone"
+      ],
+      "field_count": 12,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "personalInfo_display-name",
+          "sap_column": "name",
+          "field_name": "name",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "emergencyContactPrimary_relationship",
+          "sap_column": "relationship",
+          "field_name": "relationship",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "emergencyContactPrimary_template.csv"
+    },
+    "personRelationshipInfo": {
+      "element_id": "personRelationshipInfo",
+      "group_key": "personRelationshipInfo",
+      "fields": [
+        "personRelationshipInfo_is-accompanying-dependent",
+        "personRelationshipInfo_start-date",
+        "personRelationshipInfo_is-address-same-as-person",
+        "personRelationshipInfo_is-beneficiary",
+        "personRelationshipInfo_relationship-type"
+      ],
+      "field_count": 5,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "personInfo.person-id-external",
+          "field_name": "personIdExternal",
+          "is_foreign": true
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "personRelationshipInfo_template.csv"
+    },
+    "compInfo": {
+      "element_id": "compInfo",
+      "group_key": "compInfo",
+      "fields": [
+        "compInfo_seq-number",
+        "compInfo_start-date",
+        "compInfo_pay-group"
+      ],
+      "field_count": 3,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "compInfo_seq-number",
+          "sap_column": "seq-number",
+          "field_name": "seqNumber",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "compInfo_template.csv"
+    },
+    "payComponentRecurring": {
+      "element_id": "payComponentRecurring",
+      "group_key": "payComponentRecurring",
+      "fields": [
+        "payComponentRecurring_currency-code",
+        "payComponentRecurring_start-date",
+        "payComponentRecurring_frequency",
+        "payComponentRecurring_pay-component",
+        "payComponentRecurring_paycompvalue"
+      ],
+      "field_count": 5,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "payComponentRecurring_pay-component",
+          "sap_column": "pay-component",
+          "field_name": "payComponent",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "compInfo_seq-number",
+          "sap_column": "seq-number",
+          "field_name": "seqNumber",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "payComponentRecurring_template.csv"
+    },
+    "payComponentNonRecurring": {
+      "element_id": "payComponentNonRecurring",
+      "group_key": "payComponentNonRecurring",
+      "fields": [
+        "payComponentNonRecurring_currency-code",
+        "payComponentNonRecurring_pay-component-code",
+        "payComponentNonRecurring_pay-date",
+        "payComponentNonRecurring_value"
+      ],
+      "field_count": 4,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "payComponentNonRecurring_pay-component-code",
+          "sap_column": "pay-component-code",
+          "field_name": "payComponentCode",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "payComponentNonRecurring_pay-date",
+          "sap_column": "pay-date",
+          "field_name": "payDate",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "payComponentNonRecurring_template.csv"
+    },
+    "globalAssignmentInfo": {
+      "element_id": "globalAssignmentInfo",
+      "group_key": "globalAssignmentInfo",
+      "fields": [
+        "globalAssignmentInfo_planned-end-date",
+        "globalAssignmentInfo_start-date",
+        "globalAssignmentInfo_assignment-type",
+        "globalAssignmentInfo_company"
+      ],
+      "field_count": 4,
+      "business_keys": [
+        {
+          "golden_column": "personInfo_person-id-external",
+          "sap_column": "user-id",
+          "field_name": "userId",
+          "is_foreign": false
+        },
+        {
+          "golden_column": "personalInfo_start-date",
+          "sap_column": "start-date",
+          "field_name": "startDate",
+          "is_foreign": false
+        }
+      ],
+      "layout_filename": "globalAssignmentInfo_template.csv"
+    },
+    "workPermitInfo_CURP": {
+      "element_id": "workPermitInfo",
+      "group_key": "workPermitInfo_CURP",
+      "fields": [
+        "workPermitInfo_CURP_document-number",
+        "workPermitInfo_CURP_issue-date",
+        "workPermitInfo_CURP_country",
+        "workPermitInfo_CURP_document-title",
+        "workPermitInfo_CURP_document-type"
+      ],
+      "field_count": 5,
+      "business_keys": [],
+      "layout_filename": "workPermitInfo_CURP_template.csv"
+    },
+    "workPermitInfo_RFC": {
+      "element_id": "workPermitInfo",
+      "group_key": "workPermitInfo_RFC",
+      "fields": [
+        "workPermitInfo_RFC_document-number",
+        "workPermitInfo_RFC_issue-date",
+        "workPermitInfo_RFC_country",
+        "workPermitInfo_RFC_document-title",
+        "workPermitInfo_RFC_document-type"
+      ],
+      "field_count": 5,
+      "business_keys": [],
+      "layout_filename": "workPermitInfo_RFC_template.csv"
+    },
+    "homeAddress": {
+      "element_id": "homeAddress",
+      "group_key": "homeAddress",
+      "fields": [
+        "MEX_homeAddress_home_MEX_start-date_csf",
+        "MEX_homeAddress_home_MEX_address1_csf",
+        "MEX_homeAddress_home_MEX_address2_csf",
+        "MEX_homeAddress_home_MEX_address3_csf",
+        "MEX_homeAddress_home_MEX_address4_csf",
+        "MEX_homeAddress_home_MEX_city_csf",
+        "MEX_homeAddress_home_MEX_country_csf",
+        "MEX_homeAddress_home_MEX_state_csf",
+        "MEX_homeAddress_home_MEX_zip-code_csf",
+        "MEX_homeAddress_fiscal_MEX_start-date_csf",
+        "MEX_homeAddress_fiscal_MEX_address1_csf",
+        "MEX_homeAddress_fiscal_MEX_address2_csf",
+        "MEX_homeAddress_fiscal_MEX_address3_csf",
+        "MEX_homeAddress_fiscal_MEX_address4_csf",
+        "MEX_homeAddress_fiscal_MEX_city_csf",
+        "MEX_homeAddress_fiscal_MEX_country_csf",
+        "MEX_homeAddress_fiscal_MEX_state_csf",
+        "MEX_homeAddress_fiscal_MEX_zip-code_csf"
+      ],
+      "field_count": 18,
+      "business_keys": [],
+      "layout_filename": "homeAddress_template.csv"
+    },
+    "globalInfo": {
+      "element_id": "globalInfo",
+      "group_key": "globalInfo",
+      "fields": [
+        "MEX_globalInfo_MEX_gender-country-specific_csf",
+        "MEX_globalInfo_MEX_start-date_csf",
+        "MEX_globalInfo_MEX_genericString2_csf",
+        "MEX_globalInfo_MEX_genericString5_csf",
+        "MEX_globalInfo_MEX_genericString6_csf",
+        "MEX_globalInfo_MEX_genericString7_csf",
+        "MEX_globalInfo_MEX_custom-string1_csf"
+      ],
+      "field_count": 7,
+      "business_keys": [],
+      "layout_filename": "globalInfo_template.csv"
+    }
+  }
+}
