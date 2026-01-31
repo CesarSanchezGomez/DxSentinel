@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Union
 from datetime import datetime
 import uuid
+import os
 
 from .models.xml_elements import XMLDocument, XMLNode
 
@@ -18,15 +19,53 @@ class MetadataManager:
     Gestor de metadata persistente.
     """
     
-    def __init__(self, base_dir: Union[str, Path] = "metadata"):
+    def __init__(self, 
+                 id: Optional[str] = None,
+                 cliente: Optional[str] = None,
+                 consultor: Optional[str] = None,
+                 fecha: Optional[str] = None):
         """
         Inicializa el gestor de metadata.
         
         Args:
-            base_dir: Directorio base para almacenar metadata
+            id: ID único para la instancia
+            cliente: Nombre del cliente
+            consultor: Nombre del consultor
+            fecha: Fecha de procesamiento (formato: DDMMYY)
         """
-        self.base_dir = Path(base_dir)
+        # Directorio base fijo según requerimientos
+        self.base_dir = Path("backend/storage/metadata")
+        
+        # Si se proporciona id, usar estructura: metadata/[id]/[version]/[archivos]
+        if id:
+            # Determinar la fecha a usar
+            if fecha:
+                try:
+                    # Validar formato de fecha
+                    datetime.strptime(fecha, "%d%m%y")
+                    fecha_actual = fecha
+                except ValueError:
+                    fecha_actual = datetime.now().strftime("%d%m%y")
+            else:
+                fecha_actual = datetime.now().strftime("%d%m%y")
+            
+            # Construir estructura de directorios
+            self.base_dir = self.base_dir / id / fecha_actual
+            
+            # Agregar metadata adicional al directorio base
+            metadata_info = f"{cliente or 'cliente'}_{consultor or 'consultor'}"
+            if metadata_info:
+                self.base_dir = self.base_dir / metadata_info
+        
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Almacenar parámetros para referencia
+        self.metadata_params = {
+            'id': id,
+            'cliente': cliente or "default_client",
+            'consultor': consultor or "default_consultant",
+            'fecha': fecha or datetime.now().strftime("%d%m%y")
+        }
     
     def _get_instance_dir(self, instance_id: str) -> Path:
         """
@@ -38,6 +77,27 @@ class MetadataManager:
         Returns:
             Path del directorio de la instancia
         """
+        # Si ya tenemos una estructura con ID, mantenerla
+        if self.metadata_params.get('id'):
+            # Buscar la versión más reciente dentro de la estructura existente
+            instance_base = self.base_dir.parents[2] / self.metadata_params['id']
+            
+            # Encontrar todas las fechas disponibles
+            fecha_dirs = []
+            if instance_base.exists():
+                for fecha_dir in instance_base.iterdir():
+                    if fecha_dir.is_dir():
+                        # Buscar directorios de cliente_consultor
+                        for metadata_dir in fecha_dir.iterdir():
+                            if metadata_dir.is_dir():
+                                fecha_dirs.append((fecha_dir.name, metadata_dir))
+            
+            if fecha_dirs:
+                # Ordenar por fecha (formato DDMMYY)
+                fecha_dirs.sort(key=lambda x: x[0], reverse=True)
+                return fecha_dirs[0][1]
+        
+        # Caso por defecto: directorio basado en instance_id
         instance_dir = self.base_dir / instance_id
         instance_dir.mkdir(parents=True, exist_ok=True)
         return instance_dir
@@ -50,19 +110,19 @@ class MetadataManager:
             timestamp: Timestamp opcional
             
         Returns:
-            String con formato DDMMYY
+            String con formato HHMMSS para versiones dentro del mismo día
         """
         if timestamp is None:
             timestamp = datetime.now()
-        return timestamp.strftime("%d%m%y")
+        return timestamp.strftime("%H%M%S")
     
-    def _get_next_version(self, instance_dir: Path, date_prefix: str) -> str:
+    def _get_next_version(self, instance_dir: Path, time_prefix: str) -> str:
         """
         Obtiene la siguiente versión disponible.
         
         Args:
             instance_dir: Directorio de la instancia
-            date_prefix: Prefijo de fecha
+            time_prefix: Prefijo de hora
             
         Returns:
             String de versión completa
@@ -70,11 +130,11 @@ class MetadataManager:
         existing_versions = []
         
         for item in instance_dir.iterdir():
-            if item.is_dir() and item.name.startswith(date_prefix):
+            if item.is_dir() and item.name.startswith(time_prefix):
                 existing_versions.append(item.name)
         
         if not existing_versions:
-            return f"{date_prefix}_v1"
+            return f"{time_prefix}_v1"
         
         # Extraer números de versión
         version_numbers = []
@@ -88,7 +148,7 @@ class MetadataManager:
         else:
             next_num = 1
         
-        return f"{date_prefix}_v{next_num}"
+        return f"{time_prefix}_v{next_num}"
     
     def _calculate_content_hash(self, document: XMLDocument) -> str:
         """
@@ -160,9 +220,9 @@ class MetadataManager:
         # Obtener directorio de instancia
         instance_dir = self._get_instance_dir(instance_id)
         
-        # Generar versión
-        date_prefix = self._generate_version_prefix(timestamp)
-        version = self._get_next_version(instance_dir, date_prefix)
+        # Generar versión basada en hora/minuto/segundo
+        time_prefix = self._generate_version_prefix(timestamp)
+        version = self._get_next_version(instance_dir, time_prefix)
         
         # Crear directorio de versión
         version_dir = instance_dir / version
@@ -171,7 +231,7 @@ class MetadataManager:
         # Calcular hash del contenido
         content_hash = self._calculate_content_hash(document)
         
-        # Preparar metadata completa
+        # Preparar metadata completa incluyendo parámetros del sistema
         full_metadata = {
             'instance_id': instance_id,
             'version': version,
@@ -181,6 +241,7 @@ class MetadataManager:
             'namespaces': document.namespaces,
             'version_xml': document.version,
             'encoding': document.encoding,
+            'system_metadata': self.metadata_params,
             'custom_metadata': metadata or {},
             'stats': {
                 'node_count': self._count_nodes(document.root),
@@ -210,7 +271,8 @@ class MetadataManager:
             'metadata_file': str(metadata_file),
             'document_file': str(document_file),
             'content_hash': content_hash,
-            'timestamp': timestamp.isoformat()
+            'timestamp': timestamp.isoformat(),
+            'system_metadata': self.metadata_params
         }
     
     def load_document(self,
@@ -374,7 +436,8 @@ class MetadataManager:
                             'timestamp': metadata['timestamp'],
                             'content_hash': metadata['content_hash'],
                             'source_name': metadata['source_name'],
-                            'path': str(item)
+                            'path': str(item),
+                            'system_metadata': metadata.get('system_metadata', {})
                         })
                     except:
                         continue
@@ -449,23 +512,35 @@ class MetadataManager:
 # Singleton global para fácil acceso
 _metadata_manager = None
 
-# Singleton global para fácil acceso
-_metadata_manager = None
-
-def get_metadata_manager(base_dir: Union[str, Path] = None) -> MetadataManager:
+def get_metadata_manager(id: Optional[str] = None,
+                        cliente: Optional[str] = None,
+                        consultor: Optional[str] = None,
+                        fecha: Optional[str] = None) -> MetadataManager:
     """
     Obtiene instancia singleton del MetadataManager.
     
     Args:
-        base_dir: Directorio base para metadata.
-                  Por defecto: 'backend/storage/outputs/metadata'
+        id: ID único para la instancia
+        cliente: Nombre del cliente
+        consultor: Nombre del consultor
+        fecha: Fecha de procesamiento (formato: DDMMYY)
         
     Returns:
         Instancia de MetadataManager
     """
     global _metadata_manager
-    if _metadata_manager is None:
-        if base_dir is None:
-            base_dir = "backend/storage/outputs/metadata"
-        _metadata_manager = MetadataManager(base_dir)
+    
+    # Si no hay parámetros específicos, usar configuración por defecto
+    if id is None and cliente is None and consultor is None and fecha is None:
+        if _metadata_manager is None:
+            _metadata_manager = MetadataManager()
+    else:
+        # Crear nueva instancia con parámetros específicos
+        _metadata_manager = MetadataManager(
+            id=id,
+            cliente=cliente,
+            consultor=consultor,
+            fecha=fecha
+        )
+    
     return _metadata_manager
