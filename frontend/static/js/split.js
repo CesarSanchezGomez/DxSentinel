@@ -3,8 +3,6 @@
 
     const splitForm = document.getElementById('splitForm');
     const submitBtn = document.getElementById('submitBtn');
-    const statusDiv = document.getElementById('status');
-    const resultDiv = document.getElementById('result');
 
     function showToast(message, type = 'success') {
         const toastContainer = document.getElementById('toast-container') || createToastContainer();
@@ -39,30 +37,14 @@
                     <p>${message}</p>
                 `;
                 document.body.appendChild(loader);
+            } else {
+                loader.querySelector('p').textContent = message;
             }
         } else {
             if (loader) {
                 loader.remove();
             }
         }
-    }
-
-    function setStatus(message, type = 'info') {
-        statusDiv.style.display = 'block';
-        statusDiv.className = `log-section ${type}`;
-        statusDiv.innerHTML = `
-            <h4>Estado</h4>
-            <div class="log-output">${message}</div>
-        `;
-    }
-
-    function setResult(html) {
-        resultDiv.style.display = 'block';
-        resultDiv.className = 'log-section';
-        resultDiv.innerHTML = `
-            <h4>Resultado</h4>
-            <div class="log-output">${html}</div>
-        `;
     }
 
     splitForm.addEventListener('submit', async (e) => {
@@ -72,16 +54,14 @@
         const metadataFile = document.getElementById('metadataFile').files[0];
 
         if (!goldenFile || !metadataFile) {
-            showToast('Por favor selecciona ambos archivos', 'error');
+            showToast('Selecciona ambos archivos', 'error');
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Procesando...';
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Generando...';
         showLoader(true, 'Generando layouts...');
-
-        setStatus('Subiendo archivos y procesando...', 'info');
-        resultDiv.style.display = 'none';
 
         const formData = new FormData();
         formData.append('golden_file', goldenFile);
@@ -99,7 +79,6 @@
                 throw new Error(error.detail || 'Error procesando archivos');
             }
 
-            // Descargar el ZIP
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -110,47 +89,43 @@
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            setStatus('✓ Proceso completado exitosamente', 'success');
-            setResult(`
-                <p style="color: var(--color-success); font-weight: 600;">
-                    ✓ Layouts ZIP descargado correctamente
-                </p>
-                <p style="margin-top: 10px;">
-                    <strong>Archivos procesados:</strong><br>
-                    • ${goldenFile.name}<br>
-                    • ${metadataFile.name}
-                </p>
-            `);
-
             showToast('Layouts generados exitosamente', 'success');
 
         } catch (error) {
             console.error('Error:', error);
-            setStatus(`✗ Error: ${error.message}`, 'error');
-            showToast(`Error: ${error.message}`, 'error');
+            showToast(error.message, 'error');
         } finally {
             showLoader(false);
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Generate Layouts';
+            submitBtn.textContent = originalText;
         }
     });
 
-    // Mostrar nombre de archivos seleccionados
-    document.getElementById('goldenFile').addEventListener('change', function(e) {
-        const fileName = e.target.files[0]?.name || 'Ningún archivo seleccionado';
-        document.getElementById('goldenFileName').textContent = fileName;
+    document.getElementById('goldenFile').addEventListener('change', function (e) {
+        const fileNameDisplay = document.getElementById('goldenFileName');
 
-        if (e.target.files[0]) {
-            showToast(`Golden Record seleccionado: ${fileName}`, 'success');
+        if (!e.target.files[0]) {
+            fileNameDisplay.textContent = 'Ningún archivo seleccionado';
+            fileNameDisplay.style.color = '';
+            return;
         }
+
+        const fileName = e.target.files[0].name;
+        fileNameDisplay.textContent = fileName;
+        fileNameDisplay.style.color = 'var(--color-success)';
     });
 
-    document.getElementById('metadataFile').addEventListener('change', function(e) {
-        const fileName = e.target.files[0]?.name || 'Ningún archivo seleccionado';
-        document.getElementById('metadataFileName').textContent = fileName;
+    document.getElementById('metadataFile').addEventListener('change', function (e) {
+        const fileNameDisplay = document.getElementById('metadataFileName');
 
-        if (e.target.files[0]) {
-            showToast(`Metadata seleccionado: ${fileName}`, 'success');
+        if (!e.target.files[0]) {
+            fileNameDisplay.textContent = 'Ningún archivo seleccionado';
+            fileNameDisplay.style.color = '';
+            return;
         }
+
+        const fileName = e.target.files[0].name;
+        fileNameDisplay.textContent = fileName;
+        fileNameDisplay.style.color = 'var(--color-success)';
     });
 })();

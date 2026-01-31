@@ -3,43 +3,43 @@
 {% block title %}Split Golden Record{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2 class="page-title">Split Golden Record</h2>
-    <p class="page-description">Divide el Golden Record en layouts específicos</p>
-</div>
-
-<div class="form-container">
-    <div class="form-header">
-        <h3>Archivos Requeridos</h3>
+    <div class="page-header">
+        <h2 class="page-title">Split Golden Record</h2>
+        <p class="page-description">Divide el Golden Record en layouts específicos</p>
     </div>
 
-    <form id="splitForm" class="form-content">
-        <div class="form-group">
-            <label for="goldenFile">Golden Record CSV:</label>
-            <input type="file" id="goldenFile" class="file-input" accept=".csv" required>
-            <label for="goldenFile" class="file-label">Seleccionar archivo CSV</label>
-            <span class="file-name" id="goldenFileName">Ningún archivo seleccionado</span>
-        </div>
+    <div class="cards-grid" style="grid-template-columns: 1fr; margin: 0 auto;">
+        <div class="card">
+            <div class="card-header">
+                <h3>Procesar Archivos</h3>
+            </div>
+            <div class="card-body">
+                <form id="splitForm">
+                    <div class="form-group">
+                        <label for="goldenFile">Golden Record CSV:</label>
+                        <input type="file" id="goldenFile" class="file-input" accept=".csv" required>
+                        <label for="goldenFile" class="file-label">Seleccionar archivo CSV</label>
+                        <span class="file-name" id="goldenFileName">Ningún archivo seleccionado</span>
+                    </div>
 
-        <div class="form-group">
-            <label for="metadataFile">Metadata JSON:</label>
-            <input type="file" id="metadataFile" class="file-input" accept=".json" required>
-            <label for="metadataFile" class="file-label">Seleccionar archivo JSON</label>
-            <span class="file-name" id="metadataFileName">Ningún archivo seleccionado</span>
-        </div>
-    </form>
+                    <div class="form-group">
+                        <label for="metadataFile">Metadata JSON:</label>
+                        <input type="file" id="metadataFile" class="file-input" accept=".json" required>
+                        <label for="metadataFile" class="file-label">Seleccionar archivo JSON</label>
+                        <span class="file-name" id="metadataFileName">Ningún archivo seleccionado</span>
+                    </div>
 
-    <div class="form-footer">
-        <button type="submit" form="splitForm" id="submitBtn" class="btn btn-primary">
-            Generate Layouts
-        </button>
+                    <div class="card-actions">
+                        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%;">
+                            Generate Layouts
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-</div>
-
-<div id="status" style="display: none; margin-top: 30px;"></div>
-<div id="result" style="display: none; margin-top: 20px;"></div>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/split.js"></script>
+    <script src="{{ url_for('static', path='/js/split.js') }}"></script>
 {% endblock %}
