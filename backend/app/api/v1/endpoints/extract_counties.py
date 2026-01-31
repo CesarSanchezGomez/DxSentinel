@@ -107,8 +107,28 @@ async def list_files(user=Depends(get_current_user)):
         )
 
 
-# IMPORTANTE: Este endpoint DEBE estar ANTES del endpoint /{file_id}
-# porque FastAPI evalúa las rutas en orden
+@router.delete("/{file_id}")
+async def delete_file(file_id: str, user=Depends(get_current_user)):
+    if ".." in file_id or "/" in file_id or "\\" in file_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Nombre de archivo inválido"
+        )
+
+    deleted = FileService.delete_file(file_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail="Archivo no encontrado"
+        )
+
+    return {
+        "success": True,
+        "message": "Archivo eliminado correctamente"
+    }
+
+
 @router.get("/countries/{file_id}")
 async def extract_countries(file_id: str):
     """
@@ -134,7 +154,7 @@ async def extract_countries(file_id: str):
         if not file_path.exists():
             raise HTTPException(
                 status_code=404,
-                detail=f"Archivo no encontrado: {file_id}"
+                detail="Archivo no encontrado"
             )
 
         # Leer y parsear el XML
@@ -200,26 +220,3 @@ async def extract_countries(file_id: str):
             status_code=500,
             detail=f"Error al extraer países: {str(e)}"
         )
-
-
-# Este endpoint va AL FINAL porque captura cualquier /{file_id}
-@router.delete("/{file_id}")
-async def delete_file(file_id: str, user=Depends(get_current_user)):
-    if ".." in file_id or "/" in file_id or "\\" in file_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Nombre de archivo inválido"
-        )
-
-    deleted = FileService.delete_file(file_id)
-
-    if not deleted:
-        raise HTTPException(
-            status_code=404,
-            detail="Archivo no encontrado"
-        )
-
-    return {
-        "success": True,
-        "message": "Archivo eliminado correctamente"
-    }

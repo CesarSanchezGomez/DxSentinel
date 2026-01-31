@@ -18,5 +18,5 @@ venv/
 
 backend/storage/outputs/*.csv
 backend/storage/uploads/*.xml
-backend/storage/uploads/*.json
-backend/storage/uploads/*.zip
+backend/storage/outputs/*.json
+backend/storage/outputs/*.zip

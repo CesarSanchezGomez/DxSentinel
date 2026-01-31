@@ -1,0 +1,119 @@
+/* ========================================
+   CARDS.CSS - Tarjetas y grillas
+   ======================================== */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    background: var(--color-gray-medium);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+}
+
+#status,
+#result {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 100%;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--color-gray-medium);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-form);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--color-gray-light);
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--color-primary);
+}
+
+.card-header {
+    background: var(--color-gray-darker);
+    padding: var(--spacing-md) var(--spacing-md);
+    border-bottom: 3px solid var(--color-primary);
+}
+
+.card-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-white);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-body {
+    padding: var(--spacing-lg);
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.card-actions {
+    margin-top: auto;
+}
+
+.card-body p {
+    margin-bottom: var(--spacing-md);
+    min-height: auto;
+}
+
+.card-body p:last-of-type {
+    margin-bottom: var(--spacing-lg);
+}
+
+.complete-section {
+    margin: 0 auto;
+    max-width: 100%;
+    padding: var(--spacing-md);
+}
+
+.file-card {
+    background: var(--color-white);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    text-align: center;
+    box-shadow: var(--shadow-form);
+    border: 2px dashed var(--color-gray-light);
+    transition: all 0.3s ease;
+}
+
+.file-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.file-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.file-status {
+    display: block;
+    margin-top: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--color-gray-dark);
+}
+
+.file-status.loaded {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.file-status.error {
+    color: var(--color-error);
+    font-weight: 600;
+}

@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 
 class BusinessKeyResolver:
@@ -10,10 +10,12 @@ class BusinessKeyResolver:
 
     COMMON_KEYS = {
         "start-date", "end-date", "country", "seq-number",
-        "card-type", "phone-type", "email-type", "address-type"
+        "card-type", "phone-type", "email-type", "address-type",
+        "relationship-type", "pay-component", "pay-component-code",
+        "pay-date", "domain", "name", "relationship",
+        "document-type", "document-number", "issue-date"
     }
 
-    # Mapeo específico para elementos con prefijos
     PREFIXED_KEY_PATTERNS = {
         "homeAddress": ["home_", "fiscal_"],
         "workPermitInfo": ["workPermitInfo_"]
@@ -39,7 +41,11 @@ class BusinessKeyResolver:
             if derived:
                 return derived
 
-        # Para elementos con prefijos conocidos
+        if entity_id:
+            candidate = f"{entity_id}_{sap_column}"
+            if candidate in available_headers:
+                return candidate
+
         if entity_id and entity_id in self.PREFIXED_KEY_PATTERNS:
             for prefix in self.PREFIXED_KEY_PATTERNS[entity_id]:
                 candidate = f"{prefix}{sap_column}"

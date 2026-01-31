@@ -44,13 +44,21 @@ class FileService:
         return file_id, file_path
 
     @staticmethod
-    def get_file_path(file_id: str) -> Optional[Path]:
+    def get_file_path(file_id: str):
         """
-        Obtiene la ruta de un archivo por su ID
-        """
+        Obtiene la ruta completa de un archivo por su ID.
 
-        file_path = settings.UPLOAD_DIR / file_id
-        return file_path if file_path.exists() else None
+        Args:
+            file_id: ID del archivo
+
+        Returns:
+            Path: Ruta completa del archivo
+        """
+        from pathlib import Path
+        from ..core.config import get_settings
+
+        settings = get_settings()
+        return settings.UPLOAD_DIR / file_id
 
     @staticmethod
     def delete_file(file_id: str) -> bool:

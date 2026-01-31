@@ -14,7 +14,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.post("/golden-record")  # CAMBIAR ruta (sin split-)
+@router.post("/golden-record")
 async def split_golden_record(
         golden_file: UploadFile = File(...),
         metadata_file: UploadFile = File(...),

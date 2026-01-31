@@ -1,0 +1,81 @@
+/* ========================================
+   BASE.CSS - Variables y Reset
+   ======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Colores primarios - Verde Dxgrow Corporativo */
+    --color-primary: #b7c40b;
+    --color-primary-dark: #9aa909;
+    --color-success: #82C016;
+    --color-error: #f45a4a;
+
+    /* Colores neutrales */
+    --color-white: #ffffff;
+    --color-gray-light: #dadfe4;
+    --color-gray-medium: #E9E9E9;
+    --color-gray-dark: #888888;
+    --color-gray-darker: #393939;
+    --color-black: #000000;
+    --color-header: #282829;
+
+    /* Opacidades */
+    --overlay: rgba(0, 0, 0, 0.6);
+    --text-secondary: rgba(0, 0, 0, 0.5);
+    --text-primary: rgba(0, 0, 0, 0.8);
+
+    /* Espaciado */
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 30px;
+    --spacing-xl: 40px;
+
+    /* Bordes */
+    --border-radius: 2px;
+    --border-radius-lg: 4px;
+
+    /* Sombras */
+    --shadow-form: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-header: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+html {
+    height: 100%;
+    background: var(--color-gray-medium);
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+}
+
+body {
+    font-family: 'Open Sans', helvetica, arial, sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    background: var(--color-gray-medium);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    width: 100%;
+    max-width: 100vw;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+}

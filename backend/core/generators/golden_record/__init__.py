@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from pathlib import Path
 from .csv_generator import CSVGenerator
 from .exceptions import GoldenRecordError
@@ -10,10 +10,17 @@ __all__ = ["GoldenRecordGenerator", "GoldenRecordError"]
 class GoldenRecordGenerator:
     """Generator for golden_record_template.csv and metadata."""
 
-    def __init__(self, output_dir: str = "output/golden_record", target_country: Optional[str] = None):
+    def __init__(self, output_dir: str = "output/golden_record", target_country: Optional[str] = None,
+                 target_countries: Optional[List[str]] = None):
         self.output_dir = output_dir
-        self.target_country = target_country
-        self.csv_gen = CSVGenerator(target_country=target_country)
+
+        if target_country and not target_countries:
+            target_countries = [target_country]
+        elif target_countries and isinstance(target_countries, str):
+            target_countries = [target_countries]
+
+        self.target_countries = target_countries
+        self.csv_gen = CSVGenerator(target_countries=target_countries)
 
     def generate_template(self, parsed_model: Dict, language_code: str = "en") -> Dict[str, str]:
         """
@@ -28,8 +35,12 @@ class GoldenRecordGenerator:
 
             language_normalized = language_code.lower().replace('_', '-')
 
-            if self.target_country:
-                template_name = f"golden_record_template_{language_normalized}_{self.target_country}.csv"
+            if self.target_countries:
+                if len(self.target_countries) == 1:
+                    template_name = f"golden_record_template_{language_normalized}_{self.target_countries[0]}.csv"
+                else:
+                    countries_str = "_".join(sorted(self.target_countries))
+                    template_name = f"golden_record_template_{language_normalized}_{countries_str}.csv"
             else:
                 template_name = f"golden_record_template_{language_normalized}.csv"
 
@@ -39,7 +50,6 @@ class GoldenRecordGenerator:
                 parsed_model, str(template_path), language_normalized
             )
 
-            # Metadata se genera automáticamente en CSVGenerator
             metadata_path = Path(csv_path).parent / f"{Path(csv_path).stem}_metadata.json"
 
             return {

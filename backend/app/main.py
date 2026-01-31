@@ -1,4 +1,3 @@
-# backend/app/main.py
 import os
 
 from fastapi import FastAPI, Request, Depends, HTTPException
@@ -28,6 +27,20 @@ app.include_router(auth_router)
 app.include_router(api_router, prefix="/api/v1")
 
 
+def get_user_context(user):
+    """Extrae información del usuario incluyendo avatar de Google"""
+    user_data = {
+        "email": user.email,
+        "id": user.id,
+        "avatar_url": None
+    }
+
+    if user.user_metadata:
+        user_data["avatar_url"] = user.user_metadata.get("avatar_url") or user.user_metadata.get("picture")
+
+    return user_data
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     favicon_path = "frontend/static/images/favicon.ico"
@@ -35,9 +48,6 @@ async def favicon():
         return FileResponse(favicon_path)
     return Response(status_code=204)
 
-# ============================================
-# RUTAS PÚBLICAS
-# ============================================
 
 @app.get("/health")
 async def health_check():
@@ -49,16 +59,12 @@ async def health_check():
     }
 
 
-# ============================================
-# RUTAS PROTEGIDAS
-# ============================================
-
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, user=Depends(get_current_user)):
     """Página principal"""
-    return templates.TemplateResponse("index.html", {
+    return templates.TemplateResponse("home.html", {
         "request": request,
-        "user": {"email": user.email, "id": user.id}
+        "user": get_user_context(user)
     })
 
 
@@ -67,36 +73,22 @@ async def upload_page(request: Request, user=Depends(get_current_user)):
     """Página de carga de archivos"""
     return templates.TemplateResponse("upload.html", {
         "request": request,
-        "user": {"email": user.email, "id": user.id}
+        "user": get_user_context(user)
     })
 
 
-# backend/app/main.py
+@app.get("/split", response_class=HTMLResponse)
+async def split_page(request: Request, user=Depends(get_current_user)):
+    """Página de split layouts"""
+    return templates.TemplateResponse("split.html", {
+        "request": request,
+        "user": get_user_context(user)
+    })
 
-# @app.get("/result", response_class=HTMLResponse)
-# async def result_page(request: Request, user=Depends(get_current_user)):
-#     """Página de resultados"""
-#     return templates.TemplateResponse("result.txt", {
-#         "request": request,
-#         "user": {"email": user.email, "id": user.id}
-#     })
-
-
-# backend/app/main.py
-@app.get("/split", response_class=HTMLResponse)  # AGREGAR ESTA RUTA
-async def split_page(request: Request):
-    return templates.TemplateResponse("split.html", {"request": request})
-
-# ============================================
-# MANEJADOR DE ERRORES
-# ============================================
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    """
-    Maneja todos los HTTPException de forma centralizada.
-    Redirige a login si es 401/403, sino retorna JSON.
-    """
+    """Maneja todos los HTTPException de forma centralizada"""
     if request.url.path.startswith("/api/"):
         return JSONResponse(
             status_code=exc.status_code,

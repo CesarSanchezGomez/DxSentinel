@@ -111,8 +111,8 @@ class MetadataGenerator:
             "references": "employmentInfo"
         },
         "globalAssignmentInfo": {
-            "keys": ["userId", "startDate"],
-            "sap_format": ["user-id", "start-date"],
+            "keys": ["userId"],
+            "sap_format": ["user-id"],
             "is_master": False,
             "references": "employmentInfo"
         },
@@ -209,7 +209,6 @@ class MetadataGenerator:
             elements_meta: Dict,
             available_columns: List[str]
     ) -> Dict:
-
         mappings = {}
 
         for elem_id, meta in elements_meta.items():
@@ -225,7 +224,8 @@ class MetadataGenerator:
                 golden_column = self.key_resolver.resolve_golden_column(
                     sap_key,
                     None,
-                    available_columns
+                    available_columns,
+                    elem_id
                 )
 
                 if golden_column:

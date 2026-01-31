@@ -1,23 +1,136 @@
 <!-- frontend/templates/base.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SuccessFactors Parser{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <title>{% block title %}DxSentinel{% endblock %}</title>
+
+    <!-- CSS Modularizado - Importar en orden -->
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/header.css">
+    <link rel="stylesheet" href="/static/css/buttons.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/forms.css">
+    <link rel="stylesheet" href="/static/css/editors.css">
+    <link rel="stylesheet" href="/static/css/modals.css">
+    <link rel="stylesheet" href="/static/css/footer.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="/">Home</a>
-        <a href="/upload">Upload</a>
-        <a href="/split">Split Layouts</a>  <!-- AGREGAR -->
-    </nav>
+<header class="header">
+    <div class="header-content">
+        <div class="header-top">
+            <a href="/" class="logo-link">
+                <img
+                        src="/static/images/logo-dxgrow-inverted-300x180.png"
+                        alt="Dxgrow"
+                        class="logo-img"
+                >
+            </a>
 
-    <main>
+            <div class="header-text">
+                 <h1 class="logo">DxSentinel</h1>
+                <p class="subtitle">SAP SuccessFactors XML Processor</p>
+            </div>
+
+            <div class="user-menu">
+                {% if user and user.avatar_url %}
+                <img class="user-avatar user-avatar-img"
+                     src="{{ user.avatar_url }}"
+                     alt="{{ user.email }}"
+                     title="{{ user.email }}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                {% else %}
+                <div class="user-avatar">
+                    {% if user %}{{ user.email[0].upper() }}{% else %}U{% endif %}
+                </div>
+                {% endif %}
+                <a href="/auth/logout" class="logout-btn">Cerrar sesión</a>
+            </div>
+
+            <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu">
+                    <span class="hamburger-box">
+                        <span class="hamburger-inner"></span>
+                    </span>
+            </button>
+        </div>
+
+        <nav>
+            <ul class="header-quicklinks" id="main-nav">
+                <li class="{% if request.url.path == '/' %}active{% endif %}">
+                    <a href="/">Home</a>
+                </li>
+                <li class="{% if request.url.path == '/upload' %}active{% endif %}">
+                    <a href="/upload">Upload</a>
+                </li>
+                <li class="{% if request.url.path == '/split' %}active{% endif %}">
+                    <a href="/split">Split Layouts</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="content-wrapper">
         {% block content %}{% endblock %}
-    </main>
+    </div>
+</main>
 
-    {% block scripts %}{% endblock %}
+<footer class="footer">
+    <p>&copy; 2025 DxSentinel - SAP SuccessFactors Parser</p>
+</footer>
+
+<script>
+    const hamburger = document.getElementById('hamburger-btn');
+    const nav = document.getElementById('main-nav');
+    const header = document.querySelector('.header');
+
+    function positionMenu() {
+        if (window.innerWidth <= 980 && header && nav) {
+            const headerRect = header.getBoundingClientRect();
+            const headerBottom = headerRect.bottom + window.scrollY;
+            nav.style.top = `${headerBottom + 8}px`;
+        } else if (nav) {
+            nav.style.top = '';
+        }
+    }
+
+    if (hamburger && nav) {
+        positionMenu();
+
+        window.addEventListener('resize', function() {
+            positionMenu();
+            if (window.innerWidth > 980 && nav.classList.contains('open')) {
+                hamburger.classList.remove('open');
+                nav.classList.remove('open');
+            }
+        });
+
+        window.addEventListener('scroll', positionMenu);
+
+        hamburger.addEventListener('click', function () {
+            this.classList.toggle('open');
+            nav.classList.toggle('open');
+            positionMenu();
+        });
+
+        document.addEventListener('click', function (event) {
+            const isClickInsideNav = nav.contains(event.target);
+            const isClickOnHamburger = hamburger.contains(event.target);
+
+            if (!isClickInsideNav && !isClickOnHamburger && nav.classList.contains('open')) {
+                hamburger.classList.remove('open');
+                nav.classList.remove('open');
+            }
+        });
+    }
+</script>
+
+{% block scripts %}{% endblock %}
 </body>
 </html>

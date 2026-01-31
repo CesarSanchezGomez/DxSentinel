@@ -32,20 +32,19 @@ class XMLParser:
         'personRelationshipInfo' : 'start-date',
         'compInfo' : 'start-date',
         'payComponentRecurring' : 'start-date'
-    
+
     }
-    
+
     # NUEVA: Constante para elementos a duplicar
     ELEMENT_DUPLICATION_MAPPING = {
-        'workPermitInfo': ['RFC', 'CURP'],  # Lista de sufijos limpios
-        'homeAddress': ['home', 'fiscal']   # Lista de sufijos limpios
+        'workPermitInfo': ['RFC', 'CURP']
     }
 
     def __init__(self, element_duplication_mapping: dict = None):
         self._current_depth = 0
         self._node_count = 0
         self._elements_to_process = []  # Para seguimiento post-parsing
-        
+
         # Permitir configuración personalizada de duplicación
         if element_duplication_mapping is not None:
             self.ELEMENT_DUPLICATION_MAPPING = element_duplication_mapping
@@ -73,7 +72,7 @@ class XMLParser:
 
         # DEBUG: Mostrar conteo de elementos a duplicar
         print(f"DEBUG: Found {len(self._elements_to_process)} elements to duplicate")
-        
+
         # POST-PROCESAMIENTO: Duplicar elementos después del parsing completo
         self._process_element_duplications()
         document = XMLDocument(
@@ -170,46 +169,46 @@ class XMLParser:
 
             # Obtener el ID base original
             base_id = self._get_base_id(node)
-            
+
             # DEBUG
             print(f"DEBUG: Processing duplication for {base_id} with suffixes: {suffixes}")
-            
+
             # Crear elementos duplicados para CADA sufijo
             all_nodes = []
             current_sibling_order = original_sibling_order
-            
+
             for suffix in suffixes:
                 # Para el primer sufijo, podríamos renombrar el original
                 # Para consistencia, mejor crear todos nuevos
                 duplicated = self._duplicate_element_with_suffix(
-                    node, 
+                    node,
                     suffix,
                     parent
                 )
-                
+
                 # Actualizar posición
                 duplicated.sibling_order = current_sibling_order
                 duplicated.depth = node.depth
                 current_sibling_order += 1
-                
+
                 all_nodes.append(duplicated)
-                
+
                 # DEBUG
                 new_id = duplicated.technical_id or duplicated.attributes.get('id', '')
                 print(f"DEBUG: Created duplicate with ID: {new_id}")
 
             # IMPORTANTE: NO agregar el nodo original a la lista
             # Solo mantener los duplicados como si fueran los únicos que existieron
-            
+
             # Reemplazar el original por los duplicados
             self._replace_node_in_parent(parent, node, all_nodes)
-            
+
             # DEBUG: Verificar reemplazo
             print(f"DEBUG: Replaced original {base_id} with {len(all_nodes)} duplicates")
 
-    def _rename_element_with_suffix(self, 
-                                node: XMLNode, 
-                                suffix: str, 
+    def _rename_element_with_suffix(self,
+                                node: XMLNode,
+                                suffix: str,
                                 suffix_key: str):
         """
         Renombra un elemento existente con un sufijo específico.
@@ -221,23 +220,23 @@ class XMLParser:
             node.technical_id = new_id
             if 'id' in node.attributes:
                 node.attributes['id'] = new_id
-        
+
         # Agregar metadata de renombrado
         node.attributes['data-renamed-from'] = original_id
         node.attributes['data-suffix-type'] = suffix_key
         node.attributes['data-suffix-value'] = suffix
-        
+
         # Actualizar labels si existen
         for lang, label in node.labels.items():
             if label:  # Solo actualizar si hay label
                 node.labels[lang] = f"{label} ({suffix_key.upper()}: {suffix})"
-        
+
         # Actualizar todos los IDs dentro del árbol
         self._update_ids_in_cloned_tree(node, suffix)
 
-    def _replace_node_in_parent(self, 
-                               parent: XMLNode, 
-                               original: XMLNode, 
+    def _replace_node_in_parent(self,
+                               parent: XMLNode,
+                               original: XMLNode,
                                replacements: List[XMLNode]):
         """
         Reemplaza un nodo por una lista de nodos en el padre.
@@ -247,7 +246,7 @@ class XMLParser:
 
         new_children = []
         replaced = False
-        
+
         for child in parent.children:
             if child == original:
                 # Reemplazar el original por todos los nodos
@@ -255,13 +254,13 @@ class XMLParser:
                 replaced = True
             else:
                 new_children.append(child)
-        
+
         # Si no se encontró (caso extremo), agregar al final
         if not replaced:
             new_children.extend(replacements)
-        
+
         parent.children = new_children
-        
+
         # Re-indexar sibling orders
         for i, child in enumerate(parent.children):
             child.sibling_order = i
@@ -272,11 +271,11 @@ class XMLParser:
         """
         # Buscar por ID técnico
         element_id = node.technical_id or node.attributes.get('id', '')
-        
+
         if element_id and element_id in self.ELEMENT_DUPLICATION_MAPPING:
             suffixes = self.ELEMENT_DUPLICATION_MAPPING[element_id]
             return True, suffixes
-        
+
         return False, []
 
     def _deep_clone_node(self, node: XMLNode, parent: Optional[XMLNode] = None) -> XMLNode:
@@ -296,18 +295,18 @@ class XMLParser:
             text_content=node.text_content,
             node_type=node.node_type
         )
-        
+
         # Clonar recursivamente todos los hijos
         for i, child in enumerate(node.children):
             cloned_child = self._deep_clone_node(child, cloned)
             cloned_child.sibling_order = i
             cloned.children.append(cloned_child)
-        
+
         return cloned
 
-    def _duplicate_element_with_suffix(self, 
-                                    original_node: XMLNode, 
-                                    suffix: str, 
+    def _duplicate_element_with_suffix(self,
+                                    original_node: XMLNode,
+                                    suffix: str,
                                     parent: Optional[XMLNode] = None) -> XMLNode:
         """
         Crea una copia completa de un elemento con un sufijo específico.
@@ -315,25 +314,25 @@ class XMLParser:
         """
         # Crear copia profunda
         duplicated = self._deep_clone_node(original_node, parent)
-        
+
         # Obtener ID base
         base_id = self._get_base_id(original_node)
-        
+
         # Crear nuevo ID limpio
         new_id = f"{base_id}_{suffix}"
-        
+
         # Actualizar IDs
         duplicated.technical_id = new_id
         if 'id' in duplicated.attributes:
             duplicated.attributes['id'] = new_id
-        
+
         # **CRÍTICO: Preservar el origen del elemento**
         # Copiar todos los atributos de origen del original
         origin_attributes = ['data-origin', 'origin', 'source', 'file_type']
         for attr in origin_attributes:
             if attr in original_node.attributes and attr not in duplicated.attributes:
                 duplicated.attributes[attr] = original_node.attributes[attr]
-        
+
         # Para elementos CSF, también preservar atributos específicos
         if 'data-origin' in original_node.attributes and original_node.attributes['data-origin'] == 'csf':
             # Preservar todos los atributos CSF
@@ -341,20 +340,20 @@ class XMLParser:
             for attr in csf_attrs:
                 if attr in original_node.attributes:
                     duplicated.attributes[attr] = original_node.attributes[attr]
-        
+
         # NO agregar metadata de duplicación para que parezca original
         # El elemento duplicado debe ser indistinguible del original
-        
+
         # Actualizar labels si existen (solo añadir sufijo al texto)
         if duplicated.labels:
             for lang in duplicated.labels:
                 if duplicated.labels[lang]:
                     # Añadir sufijo al final del label
                     duplicated.labels[lang] = f"{duplicated.labels[lang]} ({suffix})"
-        
+
         # Actualizar todos los IDs dentro del árbol clonado
         self._update_ids_in_cloned_tree(duplicated, suffix, base_id)
-        
+
         return duplicated
 
 
@@ -363,12 +362,12 @@ class XMLParser:
         Obtiene el ID base sin sufijos duplicados.
         """
         original_id = node.technical_id or node.attributes.get('id', '')
-        
+
         # Si es un ID duplicado anteriormente, extraer el base
         for element_id, suffixes in self.ELEMENT_DUPLICATION_MAPPING.items():
             if original_id == element_id:
                 return element_id
-            
+
             for suffix in suffixes:
                 if original_id.endswith(f"_{suffix}"):
                     # Es un ID con sufijo, verificar si ya tiene múltiples sufijos
@@ -376,7 +375,7 @@ class XMLParser:
                     if len(parts) > 2:
                         # Tiene múltiples sufijos, devolver solo base + último sufijo
                         return f"{parts[0]}_{parts[-1]}"
-        
+
         return original_id
 
     def _update_ids_in_cloned_tree(self, node: XMLNode, suffix: str, base_id: str):
@@ -385,7 +384,7 @@ class XMLParser:
         PRESERVA los atributos de origen durante la actualización.
         """
         current_id = node.technical_id or node.attributes.get('id', '')
-        
+
         if current_id and base_id in current_id:
             # Crear nuevo ID
             if current_id == base_id:
@@ -398,12 +397,12 @@ class XMLParser:
                     new_id = f"{parts[0]}_{suffix}"
                 else:
                     new_id = f"{current_id}_{suffix}"
-            
+
             # Actualizar IDs
             node.technical_id = new_id
             if 'id' in node.attributes:
                 node.attributes['id'] = new_id
-            
+
             # **CRÍTICO: También actualizar data-original-id si existe**
             if 'data-original-id' in node.attributes:
                 # data-original-id debe apuntar al ID original SIN sufijo
@@ -416,14 +415,14 @@ class XMLParser:
                         node.attributes['data-original-id'] = f"{orig_parts[0]}_{suffix}_{orig_parts[-1]}"
                     else:
                         node.attributes['data-original-id'] = f"{orig_parts[0]}_{suffix}"
-            
+
             # **CRÍTICO: Actualizar data-full-id si existe (para elementos CSF)**
             if 'data-full-id' in node.attributes:
                 full_id = node.attributes['data-full-id']
                 if base_id in full_id:
                     # Reemplazar la parte del ID base en el data-full-id
                     node.attributes['data-full-id'] = full_id.replace(base_id, f"{base_id}_{suffix}")
-        
+
         # Actualizar IDs de los hijos recursivamente
         for child in node.children:
             self._update_ids_in_cloned_tree(child, suffix, base_id)
@@ -631,15 +630,15 @@ class XMLParser:
         """
         if not self.HRIS_ELEMENT_PATTERN.match(node.tag):
             return False, ""
-        
+
         element_id = node.technical_id or node.attributes.get('id')
-        
+
         if element_id and element_id in self.ELEMENT_FIELD_MAPPING:
             field_id = self.ELEMENT_FIELD_MAPPING[element_id]
             return True, field_id
-        
+
         return False, ""
-    
+
     def _create_date_field_node(self, field_id: str) -> XMLNode:
         """
         Crea el nodo del campo de fecha con el ID específico.
@@ -649,9 +648,9 @@ class XMLParser:
             'visibility': 'view',
             'required': 'true'
         }
-        
+
         labels = self._get_field_labels(field_id)
-        
+
         field_node = XMLNode(
             tag='hris-field',
             technical_id=field_id,
@@ -665,7 +664,7 @@ class XMLParser:
             text_content=None,
             node_type=NodeType.FIELD
         )
-        
+
         return field_node
 
     def _get_field_labels(self, field_id: str) -> Dict[str, str]:
@@ -678,7 +677,7 @@ class XMLParser:
             'es-mx': 'Fecha del Evento',
             'en-us': 'Start Date'
         }
-        
+
         label_customizations = {
             'effectiveStartDate': {
                 'default': 'Effective Start Date',
@@ -691,12 +690,13 @@ class XMLParser:
                 'en-debug': 'Hire Date',
                 'es-mx': 'Fecha de Contratación',
                 'en-us': 'Hire Date'
-            }
+            },
+
         }
-        
+
         if field_id in label_customizations:
             return label_customizations[field_id]
-        
+
         return base_labels
 
 
@@ -707,34 +707,34 @@ def parse_multiple_xml_files(files: List[Dict[str, str]]) -> Dict[str, Any]:
     loader = XMLLoader()
     parser = XMLParser()
     normalizer = XMLNormalizer()
-    
+
     documents = []
-    
+
     for file_info in files:
         try:
             file_path = file_info['path']
             file_type = file_info.get('type', 'main')
             source_name = file_info.get('source_name', file_path)
-            
+
             xml_root = loader.load_from_file(file_path, source_name)
             document = parser.parse_document(xml_root, source_name)
             document.file_type = file_type
-            
+
             if file_type == 'main':
                 _mark_nodes_origin(document.root, 'sdm')
-            
+
             documents.append(document)
-            
+
         except Exception as e:
             raise
-    
+
     if len(documents) > 1:
         fused_document = _fuse_csf_with_main(documents)
     else:
         fused_document = documents[0]
-    
+
     normalized = normalizer.normalize_document(fused_document)
-    
+
     return normalized
 
 
@@ -744,22 +744,22 @@ def _fuse_csf_with_main(documents: List[XMLDocument]) -> XMLDocument:
     """
     main_doc = None
     csf_docs = []
-    
+
     for doc in documents:
         if getattr(doc, 'file_type', 'main') == 'main':
             main_doc = doc
         else:
             csf_docs.append(doc)
-    
+
     if not main_doc:
         main_doc = documents[0]
-    
+
     if not csf_docs:
         return main_doc
-    
+
     for csf_doc in csf_docs:
         main_doc = _merge_country_nodes(main_doc, csf_doc)
-    
+
     return main_doc
 
 
@@ -768,24 +768,24 @@ def _merge_country_nodes(main_doc: XMLDocument, csf_doc: XMLDocument) -> XMLDocu
     Fusiona nodos <country> del CSF con el documento principal.
     """
     csf_countries = _find_country_nodes(csf_doc.root)
-    
+
     if not csf_countries:
         return main_doc
-    
+
     for country_node in csf_countries:
         _insert_country_into_main_with_origin(
-            main_doc.root, 
-            country_node, 
+            main_doc.root,
+            country_node,
             csf_doc.source_name,
             'csf'
         )
-    
+
     return main_doc
 
 
 def _insert_country_into_main_with_origin(
-    main_root: XMLNode, 
-    country_node: XMLNode, 
+    main_root: XMLNode,
+    country_node: XMLNode,
     source_name: str,
     origin: str = 'csf'
 ):
@@ -794,7 +794,7 @@ def _insert_country_into_main_with_origin(
     """
     country_code = country_node.technical_id or country_node.attributes.get('id', 'UNKNOWN')
     existing_country = _find_country_by_code(main_root, country_code)
-    
+
     if existing_country:
         _merge_country_content_by_country(existing_country, country_node, country_code, origin)
     else:
@@ -810,13 +810,13 @@ def _find_country_nodes(node: XMLNode) -> List[XMLNode]:
     Encuentra recursivamente todos los nodos <country> en el árbol.
     """
     countries = []
-    
+
     if 'country' in node.tag.lower():
         countries.append(node)
-    
+
     for child in node.children:
         countries.extend(_find_country_nodes(child))
-    
+
     return countries
 
 
@@ -837,24 +837,24 @@ def _clone_node_with_origin(node: XMLNode, origin: str, country_code: str = None
         text_content=node.text_content,
         node_type=node.node_type
     )
-    
+
     if origin:
         cloned.attributes['data-origin'] = origin
-    
+
     if country_code:
         cloned.attributes['data-country'] = country_code
-    
+
     if node.technical_id:
         if origin == 'csf':
             pass
         elif origin == 'sdm':
             pass
-    
+
     for child in node.children:
         cloned_child = _clone_node_with_origin(child, origin, country_code)
         cloned_child.parent = cloned
         cloned.children.append(cloned_child)
-    
+
     return cloned
 
 
@@ -866,12 +866,12 @@ def _find_country_by_code(node: XMLNode, country_code: str) -> Optional[XMLNode]
         current_code = node.technical_id or node.attributes.get('id')
         if current_code == country_code:
             return node
-    
+
     for child in node.children:
         result = _find_country_by_code(child, country_code)
         if result:
             return result
-    
+
     return None
 
 
@@ -892,12 +892,12 @@ def _clone_node(node: XMLNode) -> XMLNode:
         text_content=node.text_content,
         node_type=node.node_type
     )
-    
+
     for child in node.children:
         cloned_child = _clone_node(child)
         cloned_child.parent = cloned
         cloned.children.append(cloned_child)
-    
+
     return cloned
 
 
@@ -907,17 +907,17 @@ def _mark_nodes_origin(node: XMLNode, origin: str):
     """
     if 'data-origin' not in node.attributes:
         node.attributes['data-origin'] = origin
-    
+
     if 'hris' in node.tag.lower() and node.technical_id and origin != 'sdm':
         node.technical_id = f"{node.technical_id}_{origin}"
-    
+
     for child in node.children:
         _mark_nodes_origin(child, origin)
 
 
 def _merge_country_content_by_country(
-    existing_country: XMLNode, 
-    new_country: XMLNode, 
+    existing_country: XMLNode,
+    new_country: XMLNode,
     country_code: str,
     origin: str
 ):
@@ -927,14 +927,14 @@ def _merge_country_content_by_country(
     for new_element in new_country.children:
         if 'hris' in new_element.tag.lower() and 'element' in new_element.tag.lower():
             element_id = new_element.technical_id or new_element.attributes.get('id')
-            
+
             existing_element = None
             for child in existing_country.children:
                 if ('hris' in child.tag.lower() and 'element' in child.tag.lower() and
                     (child.technical_id or child.attributes.get('id')) == element_id):
                     existing_element = child
                     break
-            
+
             if existing_element:
                 _merge_element_fields_by_country(existing_element, new_element, country_code, origin)
             else:
@@ -942,16 +942,16 @@ def _merge_country_content_by_country(
                 cloned_element.parent = existing_country
                 cloned_element.depth = existing_country.depth + 1
                 cloned_element.sibling_order = len(existing_country.children)
-                
+
                 if origin == 'csf':
                     _generate_country_based_ids(cloned_element, country_code, origin)
-                
+
                 existing_country.children.append(cloned_element)
 
 
 def _merge_element_fields_by_country(
-    existing_element: XMLNode, 
-    new_element: XMLNode, 
+    existing_element: XMLNode,
+    new_element: XMLNode,
     country_code: str,
     origin: str
 ):
@@ -961,27 +961,27 @@ def _merge_element_fields_by_country(
     for new_field in new_element.children:
         if 'hris' in new_field.tag.lower() and 'field' in new_field.tag.lower():
             field_id = new_field.technical_id or new_field.attributes.get('id')
-            
+
             existing_field_found = False
             for existing_field in existing_element.children:
                 if ('hris' in existing_field.tag.lower() and 'field' in existing_field.tag.lower() and
                     (existing_field.technical_id or existing_field.attributes.get('id')) == field_id):
-                    
+
                     if 'data-origin' not in existing_field.attributes:
                         existing_field.attributes['data-origin'] = 'sdm'
-                    
+
                     existing_field_found = True
                     break
-            
+
             if not existing_field_found:
                 cloned_field = _clone_node_with_origin(new_field, origin, country_code)
                 cloned_field.parent = existing_element
                 cloned_field.depth = existing_element.depth + 1
                 cloned_field.sibling_order = len(existing_element.children)
-                
+
                 if origin == 'csf':
                     _generate_country_based_ids(cloned_field, country_code, origin)
-                
+
                 existing_element.children.append(cloned_field)
 
 
@@ -991,22 +991,22 @@ def _generate_country_based_ids(node: XMLNode, country_code: str, origin: str):
     """
     if origin == 'sdm':
         return
-    
+
     current_id = node.technical_id or node.attributes.get('id', '')
-    
+
     if not current_id:
         return
-    
+
     node.attributes['data-original-id'] = current_id
-    
+
     if origin == 'csf':
         full_id = f"{country_code}_{current_id}_{origin}"
     else:
         full_id = f"{country_code}_{current_id}"
-    
+
     node.attributes['data-full-id'] = full_id
     node.technical_id = full_id
-    
+
     if 'hris' in node.tag.lower() and 'element' in node.tag.lower():
         for child in node.children:
             if 'hris' in child.tag.lower() and 'field' in child.tag.lower():

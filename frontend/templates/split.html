@@ -1,31 +1,45 @@
-<!-- frontend/templates/split.html -->
 {% extends "base.html" %}
 
 {% block title %}Split Golden Record{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 800px; margin: 50px auto;">
-    <h1>Split Golden Record into Layouts</h1>
+<div class="page-header">
+    <h2 class="page-title">Split Golden Record</h2>
+    <p class="page-description">Divide el Golden Record en layouts específicos</p>
+</div>
 
-    <form id="splitForm">
-        <div class="form-group" style="margin-bottom: 20px;">
+<div class="form-container">
+    <div class="form-header">
+        <h3>Archivos Requeridos</h3>
+    </div>
+
+    <form id="splitForm" class="form-content">
+        <div class="form-group">
             <label for="goldenFile">Golden Record CSV:</label>
-            <input type="file" id="goldenFile" accept=".csv" required style="display: block; margin-top: 5px;">
+            <input type="file" id="goldenFile" class="file-input" accept=".csv" required>
+            <label for="goldenFile" class="file-label">Seleccionar archivo CSV</label>
+            <span class="file-name" id="goldenFileName">Ningún archivo seleccionado</span>
         </div>
 
-        <div class="form-group" style="margin-bottom: 20px;">
+        <div class="form-group">
             <label for="metadataFile">Metadata JSON:</label>
-            <input type="file" id="metadataFile" accept=".json" required style="display: block; margin-top: 5px;">
+            <input type="file" id="metadataFile" class="file-input" accept=".json" required>
+            <label for="metadataFile" class="file-label">Seleccionar archivo JSON</label>
+            <span class="file-name" id="metadataFileName">Ningún archivo seleccionado</span>
         </div>
-
-        <button type="submit" id="submitBtn" style="padding: 10px 20px; cursor: pointer;">Generate Layouts</button>
     </form>
 
-    <div id="status" style="display: none; margin-top: 20px; padding: 10px; border-radius: 5px;"></div>
-    <div id="result" style="display: none; margin-top: 20px;"></div>
+    <div class="form-footer">
+        <button type="submit" form="splitForm" id="submitBtn" class="btn btn-primary">
+            Generate Layouts
+        </button>
+    </div>
 </div>
+
+<div id="status" style="display: none; margin-top: 30px;"></div>
+<div id="result" style="display: none; margin-top: 20px;"></div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/split.js') }}"></script>
+<script src="/static/js/split.js"></script>
 {% endblock %}

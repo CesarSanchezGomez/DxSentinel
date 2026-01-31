@@ -12,38 +12,55 @@ class ElementProcessor:
         "homeAddress", "phoneInfo", "emailInfo", "nationalIdCard",
         "emergencyContactPrimary", "personRelationshipInfo",
         "compInfo", "payComponentRecurring", "payComponentNonRecurring",
-        "workPermitInfo", "globalAssignmentInfo", "workPermitInfo_CURP","workPermitInfo_RFC", "globalAssignmentInfo"
+        "workPermitInfo", "workPermitInfo_CURP",
+        "workPermitInfo_RFC", "globalAssignmentInfo", "jobRelationsInfo", "imInfo", "pensionPayoutsInfo", "globalInfo"
     ]
 
-    def __init__(self, target_country: Optional[str] = None):
+    def __init__(self, target_countries: Optional[List[str]] = None, target_country: Optional[str] = None):
         """
         Args:
-            target_country: Specific country code to include (e.g., "MEX").
+            target_countries: List of country codes to include (e.g., ["MEX", "BRA"]).
+            target_country: Single country code (legacy, converted to list).
                            If None, includes all countries.
         """
-        print(f"[DEBUG] ElementProcessor initialized with target_country={target_country}")  # ADD THIS
+        if target_country and not target_countries:
+            target_countries = [target_country]
+        elif target_countries and isinstance(target_countries, str):
+            target_countries = [target_countries]
+
         self.field_filter = FieldFilter()
         self.global_field_ids: Set[str] = set()
-        self.target_country = target_country.upper() if target_country else None
-        self._normalized_target_country = self._normalize_country_code(target_country) if target_country else None
-        print(f"[DEBUG] Normalized target country: {self._normalized_target_country}")  # ADD THIS
+        self.target_countries = [c.upper() for c in target_countries] if target_countries else None
+
+        print(f"[DEBUG] ElementProcessor initialized with target_countries={self.target_countries}")
 
     def _normalize_country_code(self, country_code: str) -> str:
         """Normalizes country code for comparison."""
         return country_code.strip().upper()
 
+    def _should_include_country(self, country_code: str) -> bool:
+        """
+        Determina si un país debe ser incluido en el procesamiento.
+        """
+        if not self.target_countries:
+            return True
+
+        normalized = self._normalize_country_code(country_code)
+        return normalized in self.target_countries
+
     def process_model(self, parsed_model: Dict) -> Dict:
         """
         Processes model and generates Golden Record structure.
+        Supports processing multiple countries.
         """
         try:
             structure = parsed_model.get("structure", {})
-            
+
             sdm_elements = GoldenRecordFieldFinder.find_all_elements(structure, origin_filter="sdm")
             all_elements = GoldenRecordFieldFinder.find_all_elements(structure)
-            non_csf_elements = [elem for elem in all_elements 
-                              if GoldenRecordFieldFinder.get_element_origin(elem) != "csf"]
-            
+            non_csf_elements = [elem for elem in all_elements
+                                if GoldenRecordFieldFinder.get_element_origin(elem) != "csf"]
+
             global_elements_dict = {}
             for elem in sdm_elements + non_csf_elements:
                 elem_id = elem.get("technical_id") or elem.get("id", "")
@@ -53,31 +70,36 @@ class ElementProcessor:
                         "node": elem,
                         "origin": origin
                     }
-            
+
             country_nodes = self._find_country_nodes(structure)
-            
-            country_specific_elements = {}
+            print(f"[DEBUG] Found {len(country_nodes)} country nodes total")
+
+            filtered_country_nodes = []
             for country_node in country_nodes:
+                country_code = self._get_country_code(country_node)
+                if country_code and self._should_include_country(country_code):
+                    filtered_country_nodes.append(country_node)
+                    print(f"[DEBUG] Including country: {country_code}")
+                elif country_code:
+                    print(f"[DEBUG] Excluding country: {country_code}")
+
+            print(f"[DEBUG] Processing {len(filtered_country_nodes)} countries")
+
+            country_specific_elements = {}
+            for country_node in filtered_country_nodes:
                 country_code = self._get_country_code(country_node)
                 if not country_code:
                     continue
-                
-                if self.target_country:
-                    normalized_country_code = self._normalize_country_code(country_code)
-                    if normalized_country_code != self._normalized_target_country:
-                        continue
-                
+
                 csf_elements_in_country = GoldenRecordFieldFinder.find_all_elements(country_node, origin_filter="csf")
-                
+                print(f"[DEBUG] Country {country_code}: {len(csf_elements_in_country)} CSF elements")
+
                 for elem in csf_elements_in_country:
                     elem_id = elem.get("technical_id") or elem.get("id", "")
                     if elem_id:
                         clean_elem_id = elem_id.replace("_csf", "")
                         country_element_id = f"{country_code}_{clean_elem_id}"
-                        
-                        attributes = elem.get("attributes", {}).get("raw", {})
-                        data_country = attributes.get("data-country", "")
-                        
+
                         country_specific_elements[country_element_id] = {
                             "node": elem,
                             "country_code": country_code,
@@ -85,15 +107,15 @@ class ElementProcessor:
                             "original_element_id": elem_id,
                             "clean_element_id": clean_elem_id
                         }
-            
+
             processed = []
             custom_elements = []
-            
+
             for elem_id in self.ELEMENT_HIERARCHY:
                 if elem_id in global_elements_dict:
                     elem_info = global_elements_dict[elem_id]
                     element_data = self._process_element(
-                        elem_info["node"], 
+                        elem_info["node"],
                         elem_id,
                         origin=elem_info["origin"],
                         is_country_specific=False
@@ -101,13 +123,13 @@ class ElementProcessor:
                     if element_data["fields"]:
                         processed.append(element_data)
                     del global_elements_dict[elem_id]
-            
+
             csf_elements_list = []
             for element_id, elem_info in country_specific_elements.items():
                 country_code = elem_info["country_code"]
-                
+
                 element_data = self._process_element(
-                    elem_info["node"], 
+                    elem_info["node"],
                     element_id,
                     origin="csf",
                     is_country_specific=True,
@@ -115,18 +137,22 @@ class ElementProcessor:
                 )
                 if element_data["fields"]:
                     csf_elements_list.append(element_data)
-            
+
             all_elements_list = processed + custom_elements + csf_elements_list
-            
+
             result = {
                 "elements": all_elements_list,
-                "country_count": len(country_nodes),
+                "country_count": len(filtered_country_nodes),
                 "csf_elements_count": len(csf_elements_list),
                 "sdm_elements_count": len(processed + custom_elements),
-                "target_country": self.target_country,
-                "include_all_countries": self.target_country is None
+                "target_countries": self.target_countries,
+                "include_all_countries": self.target_countries is None,
+                "processed_countries": [self._get_country_code(node) for node in filtered_country_nodes]
             }
-            
+
+            print(f"[DEBUG] Final result: {len(all_elements_list)} total elements")
+            print(f"[DEBUG] Countries processed: {result['processed_countries']}")
+
             return result
 
         except Exception as e:
@@ -135,69 +161,96 @@ class ElementProcessor:
     def _find_country_nodes(self, node: Dict) -> List[Dict]:
         """Finds all country nodes in the tree."""
         countries = []
-        
+
         if 'country' in node.get("tag", "").lower():
             countries.append(node)
-        
+
         for child in node.get("children", []):
             countries.extend(self._find_country_nodes(child))
-        
+
         return countries
-    
+
     def _get_country_code(self, country_node: Dict) -> Optional[str]:
         """Extracts country code from a country node."""
         country_code = country_node.get("technical_id")
         if country_code:
             return country_code
-        
+
         attributes = country_node.get("attributes", {}).get("raw", {})
         country_code = attributes.get("id")
         if country_code:
             return country_code
-        
+
         for attr_key in ["countryCode", "country-code", "code"]:
             country_code = attributes.get(attr_key)
             if country_code:
                 return country_code
-        
+
         labels = country_node.get("labels", {})
         if labels and isinstance(labels, dict):
             for code, label in labels.items():
                 if code and code != "default" and len(code) <= 3:
                     return code
-        
+
         return None
 
-    def _process_element(self, element_node: Dict, element_id: str, 
-                        origin: str = "",
-                        is_country_specific: bool = False, 
-                        country_code: str = None) -> Dict:
+    def _process_element(self, element_node: Dict, element_id: str,
+                         origin: str = "",
+                         is_country_specific: bool = False,
+                         country_code: str = None) -> Dict:
         """Processes individual element with recursive field search."""
         all_fields = GoldenRecordFieldFinder.find_all_fields(element_node, include_nested=True)
 
+        clean_element_id = element_id
+        if is_country_specific and country_code and element_id.startswith(f"{country_code}_"):
+            clean_element_id = element_id[len(country_code) + 1:]
+
+        BUSINESS_KEYS_TO_INCLUDE = {
+            'homeAddress': ['address-type']
+        }
+
         element_fields = []
         for field_node in all_fields:
-            include, _ = self.field_filter.filter_field(field_node)
-
             field_id = field_node.get("technical_id") or field_node.get("id", "")
             if not field_id:
                 continue
 
-            if origin == "csf" and is_country_specific and country_code:
-                full_field_id = f"{element_id}_{field_id}"
-            else:
-                full_field_id = f"{element_id}_{field_id}"
+            is_business_key = False
+            if clean_element_id in BUSINESS_KEYS_TO_INCLUDE:
+                if field_id in BUSINESS_KEYS_TO_INCLUDE[clean_element_id]:
+                    is_business_key = True
 
-            if include and full_field_id not in self.global_field_ids:
-                self.global_field_ids.add(full_field_id)
-                element_fields.append({
-                    "field_id": field_id,
-                    "full_field_id": full_field_id,
-                    "node": field_node,
-                    "origin": origin,
-                    "is_country_specific": is_country_specific,
-                    "country_code": country_code
-                })
+            if is_business_key:
+                include = True
+                exclusion_reason = None
+            else:
+                include, exclusion_reason = self.field_filter.filter_field(field_node)
+
+            full_field_id = f"{clean_element_id}_{field_id}"
+
+            if is_country_specific:
+                if include:
+                    element_fields.append({
+                        "field_id": field_id,
+                        "full_field_id": full_field_id,
+                        "node": field_node,
+                        "origin": origin,
+                        "is_country_specific": is_country_specific,
+                        "country_code": country_code,
+                        "is_business_key": is_business_key
+                    })
+            else:
+                if include and full_field_id not in self.global_field_ids:
+                    self.global_field_ids.add(full_field_id)
+                    element_fields.append({
+                        "field_id": field_id,
+                        "full_field_id": full_field_id,
+                        "node": field_node,
+                        "origin": origin,
+                        "is_country_specific": is_country_specific,
+                        "country_code": country_code,
+                        "is_business_key": is_business_key
+                    })
 
         sorted_fields = self.field_filter.sort_fields([f["node"] for f in element_fields])
 
@@ -209,7 +262,7 @@ class ElementProcessor:
                 ordered_fields.append(field_meta)
 
         return {
-            "element_id": element_id,
+            "element_id": clean_element_id,
             "origin": origin,
             "fields": ordered_fields,
             "is_country_specific": is_country_specific,

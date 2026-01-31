@@ -1,0 +1,85 @@
+/* ========================================
+   LAYOUT.CSS - Estructura general
+   ======================================== */
+
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--spacing-sm);
+}
+
+.main-content {
+    flex: 1;
+    width: 100%;
+    padding: var(--spacing-xl) var(--spacing-md);
+    background: var(--color-gray-medium);
+}
+
+.content-wrapper {
+    max-width: 1090px;
+    margin: 0 auto;
+}
+
+.divider {
+    height: 1px;
+    background: var(--color-gray-light);
+    margin: 50px 0;
+}
+
+.section-title {
+    text-align: left;
+    margin: 0 0 var(--spacing-lg) 0;
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-gray-light);
+}
+
+.section-title h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-gray-darker);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-title p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.breadcrumb {
+    margin-bottom: var(--spacing-md);
+}
+
+.breadcrumb a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.breadcrumb a:hover {
+    color: #6fa614;
+    text-decoration: underline;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-gray-light);
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.page-description {
+    color: var(--text-secondary);
+    margin-top: var(--spacing-sm);
+}
