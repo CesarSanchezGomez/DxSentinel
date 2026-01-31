@@ -1,0 +1,175 @@
+/* ========================================
+   FORMS.CSS - Formularios e inputs
+   ======================================== */
+
+.form-container {
+    background: var(--color-white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-form);
+    margin-bottom: var(--spacing-lg);
+    overflow: hidden;
+}
+
+.form-header {
+    background: var(--color-header);
+    padding: var(--spacing-md) var(--spacing-md);
+    border-bottom: 3px solid var(--color-primary);
+}
+
+.form-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-white);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-content {
+    padding: var(--spacing-md) var(--spacing-md);
+    background: var(--color-gray-medium);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: var(--spacing-sm);
+}
+
+.search-input {
+    width: 100%;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Open Sans', sans-serif;
+    border: none;
+    border-radius: 3px;
+    margin-bottom: var(--spacing-sm);
+    background: var(--color-white);
+    color: var(--text-secondary);
+}
+
+.checkbox-group {
+    background: var(--color-white);
+    border-radius: 3px;
+    padding: var(--spacing-md);
+    max-height: 300px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+}
+
+.checkbox-item label {
+    font-weight: 400;
+    cursor: pointer;
+    margin: 0;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-label {
+    display: block;
+    padding: 14px;
+    background: var(--color-white);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid var(--color-gray-light);
+    text-align: center;
+    color: var(--color-gray-darker);
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.file-label:hover {
+    background: var(--color-gray-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.file-input + label,
+.file-name {
+    display: block;
+    padding: 14px;
+    background: var(--color-white);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid var(--color-gray-light);
+    text-align: center;
+}
+
+.file-input + label {
+    border: 2px solid var(--color-gray-light);
+    color: var(--color-gray-darker);
+    font-weight: 600;
+}
+
+.file-input + label:hover {
+    background: var(--color-gray-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.file-name {
+    margin-top: var(--spacing-sm);
+    font-style: italic;
+    color: var(--color-gray-dark);
+    border: none;
+    padding: 5px;
+    font-size: 13px;
+}
+
+.form-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-gray-medium);
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+}
+
+.selection-summary {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.badge {
+    background: var(--color-primary);
+    color: var(--color-white);
+    padding: 5px 15px;
+    font-size: 12px;
+    font-weight: 600;
+}

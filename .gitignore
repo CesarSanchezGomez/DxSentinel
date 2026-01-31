@@ -12,5 +12,11 @@ __pycache__/
 dist/
 build/
 
-# VSCode (opcional)
 .vscode/
+venv/
+.venv/
+
+backend/storage/outputs/*.csv
+backend/storage/uploads/*.xml
+backend/storage/outputs/*.json
+backend/storage/outputs/*.zip

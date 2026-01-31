@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Upload XML Files{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Generar Golden Record</h2>
+    <p class="page-description">Sube y procesa tus SDM</p>
+</div>
+
+<div class="cards-grid" style="grid-template-columns: repeat(2, 1fr); margin: 0 auto;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Archivos de Entrada</h3>
+        </div>
+        <div class="card-body">
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="mainFile">Archivo Principal (SDM):</label>
+                    <input type="file" id="mainFile" class="file-input" accept=".xml" required>
+                    <label for="mainFile" class="file-label">Seleccionar XML principal</label>
+                    <span class="file-name" id="mainFileName">Ningún archivo seleccionado</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="csfFile">Archivo CSF (Opcional):</label>
+                    <input type="file" id="csfFile" class="file-input" accept=".xml">
+                    <label for="csfFile" class="file-label">Seleccionar CSF</label>
+                    <span class="file-name" id="csfFileName">Ningún archivo seleccionado</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Configuración</h3>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="languageCode">Idioma:</label>
+                <input type="text" id="languageCode" class="search-input" value="en-US" required placeholder="ej: en-US">
+            </div>
+
+            <div class="form-group">
+                <label for="openCountryModal">Países:</label>
+                <button type="button" id="openCountryModal" class="btn btn-outline" disabled style="width: 100%;">
+                    Seleccionar Países
+                </button>
+                <div class="selection-summary" style="margin-top: var(--spacing-sm);">
+                    <div class="summary-item" style="width: 100%;">
+                        <span id="countryCodeHelper" style="font-size: 12px; color: var(--color-gray-dark);">
+                            Se activará al subir CSF
+                        </span>
+                    </div>
+                    <div class="summary-item" style="width: 100%;">
+                        <span id="selectedCountriesPreview" style="font-size: 13px; color: var(--color-gray-darker); font-weight: 600;">
+                            Ningún país seleccionado
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-actions">
+                <button type="submit" form="uploadForm" class="btn btn-primary" style="width: 100%;">
+                    Procesar Archivos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="status" style="display: none;"></div>
+
+    <div id="result" style="display: none;">
+    </div>
+</div>
+
+<div id="countryModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Seleccionar Países</h3>
+            <button type="button" class="modal-close" id="closeCountryModal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group">
+                <input type="text"
+                       id="countrySearch"
+                       class="search-input"
+                       placeholder="Buscar países..."
+                       style="margin-bottom: var(--spacing-md);">
+            </div>
+
+            <div class="selection-summary" style="align-items: center; justify-content: space-between; margin-bottom: var(--spacing-md);">
+                <div class="summary-item">
+                    <button type="button" id="selectAllCountries" class="btn btn-secondary">
+                        Todos
+                    </button>
+                    <button type="button" id="deselectAllCountries" class="btn btn-secondary">
+                        Ninguno
+                    </button>
+                </div>
+                <div class="badge" id="selectedCountriesCount">
+                    0 seleccionados
+                </div>
+            </div>
+
+            <div class="checkbox-group" id="countryCheckboxes">
+                <!-- Los checkboxes se insertan dinámicamente aquí -->
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelCountrySelection">
+                Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" id="confirmCountrySelection">
+                Confirmar Selección
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/upload.js') }}"></script>
+{% endblock %}

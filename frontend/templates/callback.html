@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticando... - DxSentinel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/auth.css">
+</head>
+<body>
+<div class="callback-container">
+    <img src="/static/images/logo-dxgrow-300x180.png" alt="Dxgrow" class="logo">
+    <div class="spinner" id="spinner"></div>
+    <h1>Autenticando...</h1>
+    <p class="subtitle">Por favor espera un momento</p>
+    <div class="error-message" id="error-message" style="display: none;">
+        <p id="error-text"></p>
+        <a href="/auth/login" class="retry-btn">Volver a intentar</a>
+    </div>
+</div>
+
+<script>
+    window.ALLOWED_DOMAIN = '{{ allowed_domain }}';
+</script>
+<script src="/static/js/auth-callback.js"></script>
+</body>
+</html>
