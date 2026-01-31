@@ -5,7 +5,8 @@ from datetime import datetime
 import time
 import logging
 
-from ...core.parsing import parse_successfactors_with_csf, parse_successfactors_xml, parse_multiple_xml_files
+# NUEVO: Importar orquestador
+from ...core.parsing.orchestrator import parse_and_store_xml
 from ...core.generators.golden_record import GoldenRecordGenerator
 from ...core.generators.golden_record.element_processor import ElementProcessor
 from ...core.generators.golden_record.csv_generator import CSVGenerator
@@ -28,17 +29,36 @@ class ParserService:
         """
         start_time = datetime.now()
 
+        # NUEVO: Usar orquestador
         if csf_file_path:
-            parsed_model = parse_successfactors_with_csf(main_file_path, csf_file_path)
+            # Parsear con CSF
+            result = parse_and_store_xml(
+                main_xml_path=main_file_path,
+                instance_id=f"process_{int(time.time())}_{country_code or 'no_country'}",
+                csf_xml_path=csf_file_path,
+                element_duplication_mapping={
+                    'workPermitInfo': ['RFC', 'CURP']
+                }
+            )
+            parsed_model = result['normalized']
         else:
-            parsed_model = parse_successfactors_xml(main_file_path, "main")
+            # Parsear solo archivo principal
+            result = parse_and_store_xml(
+                main_xml_path=main_file_path,
+                instance_id=f"process_{int(time.time())}_{country_code or 'no_country'}",
+                csf_xml_path=None,
+                element_duplication_mapping={
+                    'workPermitInfo': ['RFC', 'CURP']
+                }
+            )
+            parsed_model = result['normalized']
 
+        # El resto se mantiene igual
         generator = GoldenRecordGenerator(
             output_dir=output_dir,
             target_country=country_code
         )
 
-        # CAMBIO: generate_template ahora retorna un dict
         result_files = generator.generate_template(
             parsed_model=parsed_model,
             language_code=language_code
@@ -47,7 +67,6 @@ class ParserService:
         end_time = datetime.now()
         processing_time = (end_time - start_time).total_seconds()
 
-        # Usar el path del CSV
         template_path = Path(result_files["csv"])
         metadata_path = Path(result_files["metadata"])
 
@@ -76,16 +95,6 @@ class ParserService:
     ) -> Dict:
         """
         Procesa archivos XML para múltiples países simultáneamente.
-
-        Args:
-            main_file_path: Ruta al archivo SDM principal
-            csf_file_path: Ruta al archivo CSF (opcional)
-            language_code: Código de idioma (e.g., "en-US")
-            country_codes: Lista de códigos de países (e.g., ["MEX", "USA", "CAN"])
-            output_dir: Directorio de salida
-
-        Returns:
-            Diccionario con información del procesamiento
         """
         start_time = time.time()
 
@@ -95,30 +104,25 @@ class ParserService:
         if not country_codes or len(country_codes) == 0:
             raise ValueError("Debe proporcionar al menos un código de país")
 
-        # Preparar archivos
-        files = [
-            {
-                'path': main_file_path,
-                'type': 'main',
-                'source_name': Path(main_file_path).name
+        # NUEVO: Usar orquestador
+        csf_paths = [csf_file_path] if csf_file_path else None
+        
+        # Crear ID único basado en países
+        country_str = "_".join(country_codes) if country_codes else "no_country"
+        result = parse_and_store_xml(
+            main_xml_path=main_file_path,
+            instance_id=f"multi_{int(time.time())}_{country_str}",
+            csf_xml_path=csf_paths,
+            element_duplication_mapping={
+                'workPermitInfo': ['RFC', 'CURP']
             }
-        ]
-
-        if csf_file_path:
-            files.append({
-                'path': csf_file_path,
-                'type': 'csf',
-                'source_name': Path(csf_file_path).name
-            })
-
-        # Parsear archivos
-        logger.info("Parsing XML files...")
-        parsed_model = parse_multiple_xml_files(files)
+        )
+        
+        parsed_model = result['normalized']
 
         # Procesar con ElementProcessor para MÚLTIPLES países
         logger.info(f"Processing elements for countries: {country_codes}")
 
-        # CLAVE: Pasar lista de países
         processor = ElementProcessor(target_countries=country_codes)
         golden_record = processor.process_model(parsed_model)
 
@@ -129,13 +133,11 @@ class ParserService:
         # Generar CSV
         logger.info("Generating CSV output...")
 
-        # CORRECCIÓN: Pasar target_countries y language_code al constructor
         csv_generator = CSVGenerator(
             target_countries=country_codes,
             language_code=language_code
         )
 
-        # Llamar al método generate con el golden_record ya procesado
         output_file, metadata_file = csv_generator.generate(
             golden_record=golden_record,
             output_dir=output_dir

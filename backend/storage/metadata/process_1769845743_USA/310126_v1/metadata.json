@@ -1,0 +1,59 @@
+{
+  "instance_id": "process_1769845743_USA",
+  "version": "310126_v1",
+  "timestamp": "2026-01-31T01:49:03.157949",
+  "content_hash": "5db438485558",
+  "source_name": "SDM_Principal",
+  "namespaces": {
+    "xml": "http://www.w3.org/XML/1998/namespace"
+  },
+  "version_xml": null,
+  "encoding": null,
+  "custom_metadata": {
+    "main_xml_path": "backend\\storage\\uploads\\20260131_014902_f2e954a9.xml",
+    "csf_xml_paths": [
+      "backend\\storage\\uploads\\20260131_014732_986e4023.xml"
+    ],
+    "file_count": 2
+  },
+  "stats": {
+    "node_count": 1702,
+    "unique_tags": [
+      "background-element",
+      "background-element-ref",
+      "country",
+      "country-specific-fields",
+      "custom-filters",
+      "data-field",
+      "dg-filters",
+      "display-format",
+      "display-order-follows",
+      "edit-template",
+      "element-permission",
+      "field-criteria",
+      "filter-module",
+      "format",
+      "format-group",
+      "hris-action",
+      "hris-element",
+      "hris-element-ref",
+      "hris-field",
+      "hris-field-ref",
+      "hris-mapping",
+      "hris-section",
+      "hris-sync-mappings",
+      "instruction",
+      "my-filter",
+      "permission-group-filter",
+      "picklist",
+      "rating-field",
+      "reg-ex",
+      "standard-element",
+      "standard-element-ref",
+      "succession-data-model",
+      "tab-element",
+      "trigger-rule",
+      "view-template"
+    ]
+  }
+}

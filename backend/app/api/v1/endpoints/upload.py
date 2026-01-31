@@ -1,9 +1,11 @@
+# backend/app/api/v1/endpoints/upload.py
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from ....models.upload import UploadResponse
 from ....services.file_service import FileService
 from ....core.config import get_settings
 from ....auth.dependencies import get_current_user
-import xml.etree.ElementTree as ET
+# NUEVO: Importar orquestador
+from .....core.parsing.orchestrator import create_orchestrator
 
 router = APIRouter()
 settings = get_settings()
@@ -108,11 +110,10 @@ async def list_files(user=Depends(get_current_user)):
 
 
 # IMPORTANTE: Este endpoint DEBE estar ANTES del endpoint /{file_id}
-# porque FastAPI evalúa las rutas en orden
 @router.get("/countries/{file_id}")
 async def extract_countries(file_id: str):
     """
-    Extrae la lista de países de un archivo CSF.
+    Extrae la lista de países de un archivo CSF usando el orquestador.
 
     Args:
         file_id: ID del archivo CSF subido
@@ -137,43 +138,20 @@ async def extract_countries(file_id: str):
                 detail=f"Archivo no encontrado: {file_id}"
             )
 
-        # Leer y parsear el XML
-        with open(file_path, 'rb') as f:
-            content = f.read()
-
-        # Decodificar contenido
-        text_content = content.decode('utf-8', errors='ignore')
-
-        # Validar que sea un CSF
-        if not ('<country-specific-fields' in text_content and '<format-group' in text_content):
-            raise HTTPException(
-                status_code=400,
-                detail="El archivo no es un CSF válido"
-            )
-
-        # Parsear XML
-        root = ET.fromstring(content)
-
-        # Buscar todos los elementos <country>
-        countries = set()
-
-        # Buscar en todo el árbol
-        for elem in root.iter():
-            # Eliminar namespace si existe
-            tag = elem.tag
-            if '}' in tag:
-                tag = tag.split('}', 1)[1]
-
-            # Verificar si es un elemento country
-            if tag.lower() == 'country':
-                country_id = elem.get('id')
-                if country_id:
-                    countries.add(country_id)
-
-        # Convertir a lista ordenada
-        country_list = sorted(list(countries))
-
-        if not country_list:
+        # NUEVO: Usar orquestador para extraer países
+        orchestrator = create_orchestrator()
+        
+        # Parsear el CSF para obtener estructura normalizada
+        result = orchestrator.parse_single_file(
+            xml_path=file_path,
+            source_name=f"CSF_{file_id}",
+            origin='csf'
+        )
+        
+        # Encontrar nodos país en la estructura normalizada
+        countries = _find_country_codes_in_normalized(result)
+        
+        if not countries:
             raise HTTPException(
                 status_code=400,
                 detail="No se encontraron países en el archivo CSF"
@@ -181,15 +159,10 @@ async def extract_countries(file_id: str):
 
         return {
             "success": True,
-            "countries": country_list,
-            "count": len(country_list)
+            "countries": sorted(countries),
+            "count": len(countries)
         }
 
-    except ET.ParseError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Error al parsear XML: {str(e)}"
-        )
     except FileNotFoundError:
         raise HTTPException(
             status_code=404,
@@ -200,6 +173,41 @@ async def extract_countries(file_id: str):
             status_code=500,
             detail=f"Error al extraer países: {str(e)}"
         )
+
+
+def _find_country_codes_in_normalized(normalized_model: dict) -> list:
+    """
+    Busca códigos de país en un modelo normalizado.
+    """
+    countries = set()
+    
+    def search_in_node(node: dict):
+        tag = node.get("tag", "").lower()
+        
+        if 'country' in tag:
+            # Intentar obtener código de país de varias formas
+            tech_id = node.get("technical_id")
+            if tech_id and len(tech_id) <= 3:
+                countries.add(tech_id.upper())
+            
+            # Buscar en atributos
+            attrs = node.get("attributes", {}).get("raw", {})
+            possible_keys = ['id', 'countryCode', 'country-code', 'code']
+            for key in possible_keys:
+                if key in attrs:
+                    value = attrs[key]
+                    if value and len(str(value)) <= 3:
+                        countries.add(str(value).upper())
+        
+        # Buscar recursivamente en hijos
+        for child in node.get("children", []):
+            search_in_node(child)
+    
+    # Buscar en la estructura
+    structure = normalized_model.get("structure", {})
+    search_in_node(structure)
+    
+    return list(countries)
 
 
 # Este endpoint va AL FINAL porque captura cualquier /{file_id}

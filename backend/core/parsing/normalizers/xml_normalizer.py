@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 import re
 
-from .xml_elements import XMLNode, XMLDocument
+from ..models.xml_elements import XMLNode, XMLDocument
 
 
 class XMLNormalizer:

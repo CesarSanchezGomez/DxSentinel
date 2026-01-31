@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, Union, Optional, Tuple
 import gzip
 
-from .exceptions import XMLValidationError, XMLParsingError
+from ..exceptions.xml_exceptions import XMLValidationError, XMLParsingError
 
 
 class XMLLoader:

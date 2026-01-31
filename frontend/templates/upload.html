@@ -8,71 +8,203 @@
     <p class="page-description">Sube y procesa tus SDM</p>
 </div>
 
-<div class="cards-grid" style="grid-template-columns: repeat(2, 1fr); margin: 0 auto;">
-    <div class="card">
+<!-- Contenedor principal con nueva estructura -->
+<div class="layout-container">
+    <!-- Fila superior: Información del proyecto (rectángulo acostado) -->
+    <div class="card horizontal-card">
         <div class="card-header">
-            <h3>Archivos de Entrada</h3>
+            <h3>Información del Proyecto</h3>
         </div>
-        <div class="card-body">
-            <form id="uploadForm">
-                <div class="form-group">
-                    <label for="mainFile">Archivo Principal (SDM):</label>
-                    <input type="file" id="mainFile" class="file-input" accept=".xml" required>
-                    <label for="mainFile" class="file-label">Seleccionar XML principal</label>
-                    <span class="file-name" id="mainFileName">Ningún archivo seleccionado</span>
+        <div class="card-body horizontal-body">
+            <div class="form-row">
+                <div class="form-group horizontal-group">
+                    <label for="instanceId">Instancia ID:</label>
+                    <input type="text" 
+                           id="instanceId" 
+                           class="search-input" 
+                           required 
+                           placeholder="Ingrese el ID de instancia">
+                    <span class="form-helper">Identificador único de la instancia</span>
                 </div>
 
-                <div class="form-group">
-                    <label for="csfFile">Archivo CSF (Opcional):</label>
-                    <input type="file" id="csfFile" class="file-input" accept=".xml">
-                    <label for="csfFile" class="file-label">Seleccionar CSF</label>
-                    <span class="file-name" id="csfFileName">Ningún archivo seleccionado</span>
+                <div class="form-group horizontal-group">
+                    <label for="projectName">Nombre:</label>
+                    <input type="text" 
+                           id="projectName" 
+                           class="search-input" 
+                           required 
+                           placeholder="Ingrese el nombre del proyecto">
+                    <span class="form-helper">Nombre descriptivo del proyecto</span>
                 </div>
-            </form>
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3>Configuración</h3>
-        </div>
-        <div class="card-body">
-            <div class="form-group">
-                <label for="languageCode">Idioma:</label>
-                <input type="text" id="languageCode" class="search-input" value="en-US" required placeholder="ej: en-US">
-            </div>
+                <div class="form-group horizontal-group">
+                    <label for="consultantName">Consultor:</label>
+                    <input type="text" 
+                           id="consultantName" 
+                           class="search-input" 
+                           required 
+                           placeholder="Nombre del consultor asignado">
+                    <span class="form-helper">Responsable del proyecto</span>
+                </div>
 
-            <div class="form-group">
-                <label for="openCountryModal">Países:</label>
-                <button type="button" id="openCountryModal" class="btn btn-outline" disabled style="width: 100%;">
-                    Seleccionar Países
-                </button>
-                <div class="selection-summary" style="margin-top: var(--spacing-sm);">
-                    <div class="summary-item" style="width: 100%;">
-                        <span id="countryCodeHelper" style="font-size: 12px; color: var(--color-gray-dark);">
-                            Se activará al subir CSF
-                        </span>
+                <div class="form-group horizontal-group">
+                    <label for="currentDate">Fecha:</label>
+                    <div class="date-display" id="currentDate">
+                        Cargando fecha...
                     </div>
-                    <div class="summary-item" style="width: 100%;">
-                        <span id="selectedCountriesPreview" style="font-size: 13px; color: var(--color-gray-darker); font-weight: 600;">
-                            Ningún país seleccionado
-                        </span>
-                    </div>
+                    <span class="form-helper">Fecha actual del sistema</span>
                 </div>
-            </div>
-
-            <div class="card-actions">
-                <button type="submit" form="uploadForm" class="btn btn-primary" style="width: 100%;">
-                    Procesar Archivos
-                </button>
             </div>
         </div>
     </div>
 
-    <div id="status" style="display: none;"></div>
+    <!-- Fila inferior: Dos tarjetas verticales -->
+    <div class="vertical-cards-container">
+        <div class="card vertical-card">
+            <div class="card-header">
+                <h3>Archivos de Entrada</h3>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="mainFile">Archivo Principal (SDM):</label>
+                        <input type="file" id="mainFile" class="file-input" accept=".xml" required>
+                        <label for="mainFile" class="file-label">Seleccionar XML principal</label>
+                        <span class="file-name" id="mainFileName">Ningún archivo seleccionado</span>
+                    </div>
 
-    <div id="result" style="display: none;">
+                    <div class="form-group">
+                        <label for="csfFile">Archivo CSF (Opcional):</label>
+                        <input type="file" id="csfFile" class="file-input" accept=".xml">
+                        <label for="csfFile" class="file-label">Seleccionar CSF</label>
+                        <span class="file-name" id="csfFileName">Ningún archivo seleccionado</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card vertical-card">
+            <div class="card-header">
+                <h3>Configuración</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="languageCode">Idioma:</label>
+                    <input type="text" id="languageCode" class="search-input" value="en-US" required placeholder="ej: en-US">
+                </div>
+
+                <div class="form-group">
+                    <label for="openCountryModal">Países:</label>
+                    <button type="button" id="openCountryModal" class="btn btn-outline" disabled style="width: 100%;">
+                        Seleccionar Países
+                    </button>
+                    <div class="selection-summary" style="margin-top: var(--spacing-sm);">
+                        <div class="summary-item" style="width: 100%;">
+                            <span id="countryCodeHelper" style="font-size: 12px; color: var(--color-gray-dark);">
+                                Se activará al subir CSF
+                            </span>
+                        </div>
+                        <div class="summary-item" style="width: 100%;">
+                            <span id="selectedCountriesPreview" style="font-size: 13px; color: var(--color-gray-darker); font-weight: 600;">
+                                Ningún país seleccionado
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button type="submit" form="uploadForm" class="btn btn-primary" style="width: 100%;">
+                        Procesar Archivos
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
+
+<style>
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Tarjeta horizontal superior */
+.horizontal-card {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.horizontal-body {
+    padding: var(--spacing-lg);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-lg);
+    align-items: start;
+}
+
+.form-group.horizontal-group {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Contenedor de tarjetas verticales */
+.vertical-cards-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    width: 100%;
+}
+
+.vertical-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Estilos específicos para la fecha */
+.date-display {
+    padding: 8px 12px;
+    background-color: var(--color-gray-light);
+    border: 1px solid var(--color-gray);
+    border-radius: 4px;
+    color: var(--color-gray-darker);
+    font-size: 14px;
+    margin-top: 4px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+}
+
+/* Asegurar consistencia en alturas */
+.search-input, .date-display {
+    height: 36px;
+    box-sizing: border-box;
+}
+
+.form-group.horizontal-group label {
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--color-gray-darker);
+}
+
+.form-helper {
+    font-size: 12px;
+    color: var(--color-gray-dark);
+    margin-top: 4px;
+    line-height: 1.3;
+}
+</style>
+
+<div id="status" style="display: none;"></div>
+
+<div id="result" style="display: none;">
 </div>
 
 <div id="countryModal" class="modal">
@@ -121,7 +253,6 @@
     </div>
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script src="{{ url_for('static', path='/js/upload.js') }}"></script>
 {% endblock %}
