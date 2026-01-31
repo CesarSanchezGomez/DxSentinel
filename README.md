@@ -18,8 +18,10 @@ DxSentinel/
 │   │   │       ├── router.py
 │   │   │       └── endpoints/
 │   │   │           ├── __init__.py
+│   │   │           ├── extract_counties.py
 │   │   │           ├── upload.py
 │   │   │           ├── process.py
+│   │   │           ├── split.py
 │   │   │           └── health.py
 │   │   │
 │   │   ├── auth/
@@ -55,14 +57,25 @@ DxSentinel/
 │   │   │   └── exceptions.py
 │   │   │
 │   │   └── generators/
-│   │       └── golden_record/
+│   │       ├─── golden_record/
+│   │       │   ├── __init__.py
+│   │       │   ├── csv_generator.py
+│   │       │   ├── element_processor.py
+│   │       │   ├── field_filter.py
+│   │       │   ├── field_finder.py
+│   │       │   ├── language_resolver.py
+│   │       │   └── exceptions.py
+│   │       │
+│   │       ├─── metadata/
+│   │       │   ├── __init__.py
+│   │       │   ├── business_ket_resolver.py
+│   │       │   ├── field_categorizer.py
+│   │       │   ├── field_identifier_extractor.py
+│   │       │   └── metadata_generator.py
+│   │       │
+│   │       └─── golden_record/
 │   │           ├── __init__.py
-│   │           ├── csv_generator.py
-│   │           ├── element_processor.py
-│   │           ├── field_filter.py
-│   │           ├── field_finder.py
-│   │           ├── language_resolver.py
-│   │           └── exceptions.py
+│   │           └── layout_splitter.py   
 │   │
 │   └── storage/
 │       ├── uploads/
@@ -70,14 +83,24 @@ DxSentinel/
 │
 ├── frontend/
 │   ├── static/
+│   │   ├── css/
+│   │   │   ├── auth.css
+│   │   │   ├── base.css
+│   │   │   ├── buttons.css
+│   │   │   ├── cards.css
+│   │   │   ├── editors.css
+│   │   │   ├── footer.css
+│   │   │   ├── forms.css
+│   │   │   ├── header.css
+│   │   │   ├── layout.css
+│   │   │   ├── modals.css
+│   │   │   └── responsive.css
+│   │   │
 │   │   ├── js/
-│   │   │   ├── upload.js
 │   │   │   ├── auth-callback.js
 │   │   │   ├── auth-login.js
-│   │   │   └── process.js
-│   │   │
-│   │   ├── css/
-│   │   │   └── styles.css
+│   │   │   ├── split.js
+│   │   │   └── upload.js
 │   │   │
 │   │   └── images/
 │   │       ├── favicon.ico
@@ -86,10 +109,11 @@ DxSentinel/
 │   │
 │   └── templates/
 │       ├── base.html
-│       ├── index.html
-│       ├── upload.html
+│       ├── callback.html
+│       ├── home.html
 │       ├── login.html
-│       └── callback.html
+│       ├── split.html
+│       └── upload.html
 │
 ├── .env
 ├── requirements.txt
