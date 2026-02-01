@@ -23,8 +23,9 @@ async def process_files(
     Soporta procesamiento de múltiples países cuando se proporciona un CSF.
     """
 
-    logger.info(f"Processing request: {request}")
+    logger.info(f"Processing request for id: {request.id}")
     logger.info(f"User: {user.email}")
+    logger.info(f"Cliente: {request.cliente}, Consultor: {request.consultor}")
 
     # Validar archivo principal
     main_file_path = FileService.get_file_path(request.main_file_id)
@@ -69,7 +70,11 @@ async def process_files(
                 csf_file_path=str(csf_file_path) if csf_file_path else None,
                 language_code=request.language_code,
                 country_codes=countries_to_process,
-                output_dir=str(settings.OUTPUT_DIR)
+                output_dir=str(settings.OUTPUT_DIR),
+                # PASAR PARÁMETROS CORRECTOS - usar 'id' no 'process_id'
+                id=request.id,          # ← ¡CORREGIDO!
+                cliente=request.cliente,
+                consultor=request.consultor
             )
         else:
             # Procesamiento de un solo país (compatibilidad legacy)
@@ -79,7 +84,11 @@ async def process_files(
                 csf_file_path=str(csf_file_path) if csf_file_path else None,
                 language_code=request.language_code,
                 country_code=single_country,
-                output_dir=str(settings.OUTPUT_DIR)
+                output_dir=str(settings.OUTPUT_DIR),
+                # PASAR PARÁMETROS CORRECTOS - usar 'id' no 'process_id'
+                id=request.id,          # ← ¡CORREGIDO!
+                cliente=request.cliente,
+                consultor=request.consultor
             )
 
         logger.info(f"Processing completed: {result}")

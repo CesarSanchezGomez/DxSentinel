@@ -1,3 +1,4 @@
+#/backend/core/parsing/metadata_manager.py
 """
 Gestor de metadata persistente para árboles XML parseados.
 Almacena el árbol exacto en formato serializable para acceso rápido.
@@ -6,10 +7,9 @@ import json
 import pickle
 import hashlib
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 from datetime import datetime
-import uuid
-import os
+import shutil
 
 from .models.xml_elements import XMLDocument, XMLNode
 
@@ -31,118 +31,91 @@ class MetadataManager:
             cliente: Nombre del cliente
             consultor: Nombre del consultor
         """
-        # Directorio base fijo según requerimientos
-        self.base_dir = Path("backend/storage/metadata")
+        # Usar valores por defecto si no se proporcionan
+        self.id = id or "default_id"
+        self.cliente = cliente or "default_cliente"
+        self.consultor = consultor or "default_consultor"
         
-        # Si se proporciona id, usar estructura: metadata/[id]/[cliente_consultor]/[archivos]
-        if id:
-            # Obtener fecha actual para el nombre de directorio
-            fecha_actual = datetime.now().strftime("%d%m%y")
-            
-            # Construir estructura de directorios
-            self.base_dir = self.base_dir / id / fecha_actual
-            
-            # Agregar metadata adicional al directorio base
-            metadata_info = f"{cliente or 'cliente'}_{consultor or 'consultor'}"
-            if metadata_info:
-                self.base_dir = self.base_dir / metadata_info
+        # Obtener fecha actual
+        fecha_actual = datetime.now().strftime("%Y%m%d")
         
+        # Generar versión automáticamente según las existentes
+        version = self._get_next_version(self.id, fecha_actual)
+        
+        # Estructura: /metadata/[id]/[fecha]_[version]/
+        self.base_dir = Path("backend/storage/metadata") / self.id / f"{fecha_actual}_{version}"
         self.base_dir.mkdir(parents=True, exist_ok=True)
         
-        # Almacenar parámetros para referencia
+        # Parámetros del sistema
         self.metadata_params = {
-            'id': id,
-            'cliente': cliente or "default_client",
-            'consultor': consultor or "default_consultant",
-            'fecha': datetime.now().strftime("%d%m%y")  # Siempre usar fecha actual
+            'id': self.id,
+            'cliente': self.cliente,
+            'consultor': self.consultor,
+            'fecha_creacion': datetime.now().isoformat(),
+            'estructura_creacion': f"/metadata/{self.id}/{fecha_actual}_{version}/"
         }
+        
+        # Agregar comentarios en archivo de parámetros
+        self._save_creation_info()
     
-    def _get_instance_dir(self, instance_id: str) -> Path:
+    def _get_next_version(self, id: str, fecha: str) -> str:
         """
-        Obtiene el directorio para una instancia específica.
+        Calcula la siguiente versión disponible para la fecha actual.
         
         Args:
-            instance_id: ID de la instancia
+            id: ID único
+            fecha: Fecha en formato YYYYMMDD
             
         Returns:
-            Path del directorio de la instancia
+            String de versión (v1, v2, etc.)
         """
-        # Si ya tenemos una estructura con ID, mantenerla
-        if self.metadata_params.get('id'):
-            # Buscar la versión más reciente dentro de la estructura existente
-            instance_base = self.base_dir.parents[2] / self.metadata_params['id']
-            
-            # Encontrar todas las fechas disponibles
-            fecha_dirs = []
-            if instance_base.exists():
-                for fecha_dir in instance_base.iterdir():
-                    if fecha_dir.is_dir():
-                        # Buscar directorios de cliente_consultor
-                        for metadata_dir in fecha_dir.iterdir():
-                            if metadata_dir.is_dir():
-                                fecha_dirs.append((fecha_dir.name, metadata_dir))
-            
-            if fecha_dirs:
-                # Ordenar por fecha (formato DDMMYY)
-                fecha_dirs.sort(key=lambda x: x[0], reverse=True)
-                return fecha_dirs[0][1]
+        base_path = Path("backend/storage/metadata") / id
         
-        # Caso por defecto: directorio basado en instance_id
-        instance_dir = self.base_dir / instance_id
-        instance_dir.mkdir(parents=True, exist_ok=True)
-        return instance_dir
-    
-    def _generate_version_prefix(self, timestamp: Optional[datetime] = None) -> str:
-        """
-        Genera prefijo de versión basado en fecha.
+        if not base_path.exists():
+            return "v1"
         
-        Args:
-            timestamp: Timestamp opcional
-            
-        Returns:
-            String con formato HHMMSS para versiones dentro del mismo día
-        """
-        if timestamp is None:
-            timestamp = datetime.now()
-        return timestamp.strftime("%H%M%S")
-    
-    def _get_next_version(self, instance_dir: Path, time_prefix: str) -> str:
-        """
-        Obtiene la siguiente versión disponible.
-        
-        Args:
-            instance_dir: Directorio de la instancia
-            time_prefix: Prefijo de hora
-            
-        Returns:
-            String de versión completa
-        """
+        # Buscar versiones existentes para esta fecha
         existing_versions = []
-        
-        for item in instance_dir.iterdir():
-            if item.is_dir() and item.name.startswith(time_prefix):
-                existing_versions.append(item.name)
+        for item in base_path.iterdir():
+            if item.is_dir() and item.name.startswith(fecha):
+                try:
+                    # Extraer versión del nombre: fecha_version
+                    version_part = item.name.split('_')[1]
+                    if version_part.startswith('v'):
+                        version_num = int(version_part[1:])
+                        existing_versions.append(version_num)
+                except (IndexError, ValueError):
+                    continue
         
         if not existing_versions:
-            return f"{time_prefix}_v1"
+            return "v1"
         
-        # Extraer números de versión
-        version_numbers = []
-        for version in existing_versions:
-            parts = version.split('_v')
-            if len(parts) == 2 and parts[1].isdigit():
-                version_numbers.append(int(parts[1]))
+        next_version = max(existing_versions) + 1
+        return f"v{next_version}"
+    
+    def _save_creation_info(self):
+        """Guarda información de creación como comentario en JSON."""
+        creation_info = {
+            "__comment_creation__": {
+                "message": "Información de creación del sistema",
+                "generated_by": "MetadataManager",
+                "generated_at": self.metadata_params['fecha_creacion'],
+                "parameters": {
+                    "id": self.metadata_params['id'],
+                    "cliente": self.metadata_params['cliente'],
+                    "consultor": self.metadata_params['consultor']
+                }
+            },
+            **self.metadata_params
+        }
         
-        if version_numbers:
-            next_num = max(version_numbers) + 1
-        else:
-            next_num = 1
-        
-        return f"{time_prefix}_v{next_num}"
+        info_file = self.base_dir / "creation_info.json"
+        with open(info_file, 'w', encoding='utf-8') as f:
+            json.dump(creation_info, f, indent=2, ensure_ascii=False, sort_keys=True)
     
     def _calculate_content_hash(self, document: XMLDocument) -> str:
         """
-        Calcula hash del contenido del documento para detectar cambios.
+        Calcula hash del contenido del documento.
         
         Args:
             document: Documento XML
@@ -150,7 +123,6 @@ class MetadataManager:
         Returns:
             Hash MD5 del contenido
         """
-        # Serializar estructura clave para hash
         content_data = {
             'source_name': document.source_name,
             'namespaces': document.namespaces,
@@ -180,7 +152,6 @@ class MetadataManager:
             'children_count': len(node.children)
         }
         
-        # Incluir hash de hijos
         children_hashes = [self._hash_node(child) for child in node.children]
         node_data['children_hashes'] = children_hashes
         
@@ -189,42 +160,30 @@ class MetadataManager:
     
     def save_document(self,
                      document: XMLDocument,
-                     instance_id: str,
-                     metadata: Optional[Dict[str, Any]] = None,
-                     timestamp: Optional[datetime] = None) -> Dict[str, Any]:
+                     id: Optional[str] = None,
+                     metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Guarda un documento en metadata.
         
         Args:
             document: Documento XML a guardar
-            instance_id: ID de la instancia
+            id: ID de la instancia (usa el del manager si no se proporciona)
             metadata: Metadata adicional a guardar
-            timestamp: Timestamp opcional
             
         Returns:
             Información de la versión guardada
         """
-        if timestamp is None:
-            timestamp = datetime.now()
+        # Usar ID proporcionado o el del manager
+        document_id = id or self.id
         
-        # Obtener directorio de instancia
-        instance_dir = self._get_instance_dir(instance_id)
-        
-        # Generar versión basada en hora/minuto/segundo
-        time_prefix = self._generate_version_prefix(timestamp)
-        version = self._get_next_version(instance_dir, time_prefix)
-        
-        # Crear directorio de versión
-        version_dir = instance_dir / version
-        version_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now()
         
         # Calcular hash del contenido
         content_hash = self._calculate_content_hash(document)
         
-        # Preparar metadata completa incluyendo parámetros del sistema
+        # Preparar metadata completa
         full_metadata = {
-            'instance_id': instance_id,
-            'version': version,
+            'id': document_id,
             'timestamp': timestamp.isoformat(),
             'content_hash': content_hash,
             'source_name': document.source_name,
@@ -239,40 +198,46 @@ class MetadataManager:
             }
         }
         
-        # Guardar metadata
-        metadata_file = version_dir / 'metadata.json'
-        with open(metadata_file, 'w', encoding='utf-8') as f:
-            json.dump(full_metadata, f, indent=2, ensure_ascii=False)
+        # Agregar comentario de creación
+        full_metadata_with_comment = {
+            "__comment__": "Metadata generada automáticamente por el sistema",
+            **full_metadata
+        }
         
-        # Guardar documento serializado (usando pickle para preservar objetos Python)
-        document_file = version_dir / 'document.pkl'
+        # Guardar metadata
+        metadata_file = self.base_dir / f"metadata_{document_id}.json"
+        with open(metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(full_metadata_with_comment, f, indent=2, ensure_ascii=False)
+        
+        # Guardar documento serializado
+        document_file = self.base_dir / f"document_{document_id}.pkl"
         with open(document_file, 'wb') as f:
             pickle.dump(document, f, protocol=pickle.HIGHEST_PROTOCOL)
         
-        # Guardar también en formato JSON para inspección
-        json_file = version_dir / 'document.json'
+        # Guardar en formato JSON para inspección
+        json_file = self.base_dir / f"document_{document_id}.json"
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(document.to_dict(), f, indent=2, ensure_ascii=False)
         
         return {
-            'instance_id': instance_id,
-            'version': version,
-            'path': str(version_dir),
+            'id': document_id,
+            'path': str(self.base_dir),
             'metadata_file': str(metadata_file),
             'document_file': str(document_file),
+            'json_file': str(json_file),
             'content_hash': content_hash,
             'timestamp': timestamp.isoformat(),
             'system_metadata': self.metadata_params
         }
     
     def load_document(self,
-                     instance_id: str,
+                     id: str,
                      version: Optional[str] = None) -> XMLDocument:
         """
         Carga un documento desde metadata.
         
         Args:
-            instance_id: ID de la instancia
+            id: ID de la instancia
             version: Versión específica (última si None)
             
         Returns:
@@ -281,43 +246,34 @@ class MetadataManager:
         Raises:
             FileNotFoundError: Si no se encuentra la metadata
         """
-        instance_dir = self._get_instance_dir(instance_id)
-        
-        if not instance_dir.exists():
-            raise FileNotFoundError(f"No metadata found for instance: {instance_id}")
-        
-        # Determinar versión a cargar
-        if version is None:
-            # Obtener última versión por timestamp
-            versions = []
-            for item in instance_dir.iterdir():
-                if item.is_dir():
-                    metadata_file = item / 'metadata.json'
-                    if metadata_file.exists():
-                        try:
-                            with open(metadata_file, 'r', encoding='utf-8') as f:
-                                metadata = json.load(f)
-                            versions.append((metadata['timestamp'], item.name))
-                        except:
-                            continue
+        # Determinar directorio de búsqueda
+        if version:
+            # Buscar versión específica
+            version_dir = Path("backend/storage/metadata") / id / version
+        else:
+            # Buscar última versión
+            base_path = Path("backend/storage/metadata") / id
+            if not base_path.exists():
+                raise FileNotFoundError(f"No metadata found for id: {id}")
             
-            if not versions:
-                raise FileNotFoundError(f"No valid versions found for instance: {instance_id}")
+            # Obtener directorios ordenados por nombre (fecha descendente)
+            dirs = sorted([d for d in base_path.iterdir() if d.is_dir()], 
+                         key=lambda x: x.name, reverse=True)
             
-            # Ordenar por timestamp descendente
-            versions.sort(key=lambda x: x[0], reverse=True)
-            version = versions[0][1]
+            if not dirs:
+                raise FileNotFoundError(f"No versions found for id: {id}")
+            
+            version_dir = dirs[0]
         
-        # Cargar desde versión específica
-        version_dir = instance_dir / version
-        
-        if not version_dir.exists():
-            raise FileNotFoundError(f"Version {version} not found for instance: {instance_id}")
-        
-        document_file = version_dir / 'document.pkl'
+        # Buscar documento
+        document_file = version_dir / f"document_{id}.pkl"
         
         if not document_file.exists():
-            raise FileNotFoundError(f"Document file not found: {document_file}")
+            # Intentar con patrón alternativo
+            document_files = list(version_dir.glob("*.pkl"))
+            if not document_files:
+                raise FileNotFoundError(f"No document file found in: {version_dir}")
+            document_file = document_files[0]
         
         # Cargar documento
         with open(document_file, 'rb') as f:
@@ -326,49 +282,43 @@ class MetadataManager:
         return document
     
     def load_metadata(self,
-                     instance_id: str,
+                     id: str,
                      version: Optional[str] = None) -> Dict[str, Any]:
         """
         Carga solo metadata sin el documento completo.
         
         Args:
-            instance_id: ID de la instancia
+            id: ID de la instancia
             version: Versión específica (última si None)
             
         Returns:
             Metadata cargada
         """
-        instance_dir = self._get_instance_dir(instance_id)
-        
-        if not instance_dir.exists():
-            raise FileNotFoundError(f"No metadata found for instance: {instance_id}")
-        
-        # Determinar versión
-        if version is None:
-            # Buscar última versión
-            metadata_files = list(instance_dir.rglob('metadata.json'))
-            if not metadata_files:
-                raise FileNotFoundError(f"No metadata files found for instance: {instance_id}")
-            
-            # Obtener timestamps para ordenar
-            versions_data = []
-            for mf in metadata_files:
-                try:
-                    with open(mf, 'r', encoding='utf-8') as f:
-                        metadata = json.load(f)
-                    versions_data.append((metadata['timestamp'], mf))
-                except:
-                    continue
-            
-            if not versions_data:
-                raise FileNotFoundError(f"No valid metadata found for instance: {instance_id}")
-            
-            versions_data.sort(key=lambda x: x[0], reverse=True)
-            metadata_file = versions_data[0][1]
+        # Determinar directorio
+        if version:
+            version_dir = Path("backend/storage/metadata") / id / version
         else:
-            metadata_file = instance_dir / version / 'metadata.json'
-            if not metadata_file.exists():
-                raise FileNotFoundError(f"Metadata not found for version: {version}")
+            base_path = Path("backend/storage/metadata") / id
+            if not base_path.exists():
+                raise FileNotFoundError(f"No metadata found for id: {id}")
+            
+            dirs = sorted([d for d in base_path.iterdir() if d.is_dir()], 
+                         key=lambda x: x.name, reverse=True)
+            
+            if not dirs:
+                raise FileNotFoundError(f"No versions found for id: {id}")
+            
+            version_dir = dirs[0]
+        
+        # Buscar archivo de metadata
+        metadata_file = version_dir / f"metadata_{id}.json"
+        
+        if not metadata_file.exists():
+            # Intentar con patrón alternativo
+            metadata_files = list(version_dir.glob("metadata*.json"))
+            if not metadata_files:
+                raise FileNotFoundError(f"No metadata file found in: {version_dir}")
+            metadata_file = metadata_files[0]
         
         # Cargar metadata
         with open(metadata_file, 'r', encoding='utf-8') as f:
@@ -376,80 +326,46 @@ class MetadataManager:
         
         return metadata
     
-    def list_instances(self) -> list[str]:
+    def list_versions(self, id: str) -> List[Dict[str, Any]]:
         """
-        Lista todas las instancias disponibles.
-        
-        Returns:
-            Lista de IDs de instancia
-        """
-        instances = []
-        
-        if self.base_dir.exists():
-            for item in self.base_dir.iterdir():
-                if item.is_dir():
-                    # Verificar que sea una instancia válida (tiene metadata)
-                    metadata_files = list(item.rglob('metadata.json'))
-                    if metadata_files:
-                        instances.append(item.name)
-        
-        return sorted(instances)
-    
-    def list_versions(self, instance_id: str) -> list[Dict[str, Any]]:
-        """
-        Lista todas las versiones de una instancia.
+        Lista todas las versiones de un ID.
         
         Args:
-            instance_id: ID de la instancia
+            id: ID de la instancia
             
         Returns:
             Lista de información de versiones
         """
-        instance_dir = self._get_instance_dir(instance_id)
+        base_path = Path("backend/storage/metadata") / id
         
-        if not instance_dir.exists():
+        if not base_path.exists():
             return []
         
         versions = []
         
-        for item in instance_dir.iterdir():
+        for item in base_path.iterdir():
             if item.is_dir():
-                metadata_file = item / 'metadata.json'
-                if metadata_file.exists():
+                # Buscar archivos de metadata
+                metadata_files = list(item.glob("metadata*.json"))
+                if metadata_files:
                     try:
+                        metadata_file = metadata_files[0]
                         with open(metadata_file, 'r', encoding='utf-8') as f:
                             metadata = json.load(f)
                         
-                        # Agregar información básica
                         versions.append({
-                            'version': metadata['version'],
-                            'timestamp': metadata['timestamp'],
-                            'content_hash': metadata['content_hash'],
-                            'source_name': metadata['source_name'],
-                            'path': str(item),
-                            'system_metadata': metadata.get('system_metadata', {})
+                            'version': item.name,
+                            'timestamp': metadata.get('timestamp', ''),
+                            'content_hash': metadata.get('content_hash', ''),
+                            'source_name': metadata.get('source_name', ''),
+                            'path': str(item)
                         })
                     except:
                         continue
         
-        # Ordenar por timestamp descendente
-        versions.sort(key=lambda x: x['timestamp'], reverse=True)
+        # Ordenar por versión (nombre de directorio) descendente
+        versions.sort(key=lambda x: x['version'], reverse=True)
         return versions
-    
-    def get_latest_version(self, instance_id: str) -> Optional[str]:
-        """
-        Obtiene la última versión de una instancia.
-        
-        Args:
-            instance_id: ID de la instancia
-            
-        Returns:
-            Última versión o None
-        """
-        versions = self.list_versions(instance_id)
-        if versions:
-            return versions[0]['version']
-        return None
     
     def _count_nodes(self, node: XMLNode) -> int:
         """Cuenta nodos recursivamente."""
@@ -458,55 +374,19 @@ class MetadataManager:
             count += self._count_nodes(child)
         return count
     
-    def _collect_unique_tags(self, node: XMLNode) -> list[str]:
+    def _collect_unique_tags(self, node: XMLNode) -> List[str]:
         """Recolecta tags únicos."""
         tags = {node.tag}
         for child in node.children:
             tags.update(self._collect_unique_tags(child))
         return sorted(tags)
-    
-    def cleanup_old_versions(self,
-                            instance_id: str,
-                            keep_last_n: int = 5) -> list[str]:
-        """
-        Limpia versiones antiguas, manteniendo solo las N más recientes.
-        
-        Args:
-            instance_id: ID de la instancia
-            keep_last_n: Número de versiones a mantener
-            
-        Returns:
-            Lista de versiones eliminadas
-        """
-        versions = self.list_versions(instance_id)
-        
-        if len(versions) <= keep_last_n:
-            return []
-        
-        # Versiones a eliminar (las más antiguas)
-        to_delete = versions[keep_last_n:]
-        deleted = []
-        
-        for version_info in to_delete:
-            version_path = Path(version_info['path'])
-            
-            if version_path.exists():
-                # Eliminar directorio recursivamente
-                import shutil
-                shutil.rmtree(version_path)
-                deleted.append(version_info['version'])
-        
-        return deleted
 
-
-# Singleton global para fácil acceso
-_metadata_manager = None
 
 def get_metadata_manager(id: Optional[str] = None,
                         cliente: Optional[str] = None,
                         consultor: Optional[str] = None) -> MetadataManager:
     """
-    Obtiene instancia singleton del MetadataManager.
+    Crea y retorna una instancia de MetadataManager.
     
     Args:
         id: ID único para la instancia
@@ -516,18 +396,8 @@ def get_metadata_manager(id: Optional[str] = None,
     Returns:
         Instancia de MetadataManager
     """
-    global _metadata_manager
-    
-    # Si no hay parámetros específicos, usar configuración por defecto
-    if id is None and cliente is None and consultor is None:
-        if _metadata_manager is None:
-            _metadata_manager = MetadataManager()
-    else:
-        # Crear nueva instancia con parámetros específicos
-        _metadata_manager = MetadataManager(
-            id=id,
-            cliente=cliente,
-            consultor=consultor
-        )
-    
-    return _metadata_manager
+    return MetadataManager(
+        id=id,
+        cliente=cliente,
+        consultor=consultor
+    )

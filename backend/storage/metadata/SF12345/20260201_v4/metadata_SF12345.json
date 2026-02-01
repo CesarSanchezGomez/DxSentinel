@@ -1,0 +1,66 @@
+{
+  "__comment__": "Metadata generada automáticamente por el sistema",
+  "id": "SF12345",
+  "timestamp": "2026-02-01T10:23:21.553537",
+  "content_hash": "5db438485558",
+  "source_name": "SDM_Principal",
+  "namespaces": {
+    "xml": "http://www.w3.org/XML/1998/namespace"
+  },
+  "version_xml": null,
+  "encoding": null,
+  "system_metadata": {
+    "id": "SF12345",
+    "cliente": "NADRO",
+    "consultor": "JAIME MARTINEZ",
+    "fecha_creacion": "2026-02-01T10:23:21.471109",
+    "estructura_creacion": "/metadata/SF12345/20260201_v4/"
+  },
+  "custom_metadata": {
+    "main_xml_path": "backend\\storage\\uploads\\20260201_102320_f71d1412.xml",
+    "csf_xml_paths": [
+      "backend\\storage\\uploads\\20260201_102010_2f311717.xml"
+    ],
+    "file_count": 2
+  },
+  "stats": {
+    "node_count": 1702,
+    "unique_tags": [
+      "background-element",
+      "background-element-ref",
+      "country",
+      "country-specific-fields",
+      "custom-filters",
+      "data-field",
+      "dg-filters",
+      "display-format",
+      "display-order-follows",
+      "edit-template",
+      "element-permission",
+      "field-criteria",
+      "filter-module",
+      "format",
+      "format-group",
+      "hris-action",
+      "hris-element",
+      "hris-element-ref",
+      "hris-field",
+      "hris-field-ref",
+      "hris-mapping",
+      "hris-section",
+      "hris-sync-mappings",
+      "instruction",
+      "my-filter",
+      "permission-group-filter",
+      "picklist",
+      "rating-field",
+      "reg-ex",
+      "standard-element",
+      "standard-element-ref",
+      "succession-data-model",
+      "tab-element",
+      "trigger-rule",
+      "view-template"
+    ]
+  }
+}

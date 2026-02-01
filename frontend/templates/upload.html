@@ -10,7 +10,7 @@
 
 <!-- Contenedor principal con nueva estructura -->
 <div class="layout-container">
-    <!-- Fila superior: Información del proyecto (rectángulo acostado) -->
+    <!-- Fila superior: Información del proyecto -->
     <div class="card horizontal-card">
         <div class="card-header">
             <h3>Información del Proyecto</h3>
@@ -18,41 +18,34 @@
         <div class="card-body horizontal-body">
             <div class="form-row">
                 <div class="form-group horizontal-group">
-                    <label for="instanceId">Instancia ID:</label>
+                    <label for="id">Process ID:</label>
                     <input type="text" 
-                           id="instanceId" 
+                           id="id" 
                            class="search-input" 
                            required 
-                           placeholder="Ingrese el ID de instancia">
-                    <span class="form-helper">Identificador único de la instancia</span>
+                           placeholder="Ingrese el Process ID"
+                           value="1769928382_USA">
+                    <span class="form-helper">Identificador único del proceso (ej: 1769928382_USA)</span>
                 </div>
 
                 <div class="form-group horizontal-group">
-                    <label for="projectName">Nombre:</label>
+                    <label for="cliente">Cliente:</label>
                     <input type="text" 
-                           id="projectName" 
+                           id="cliente" 
                            class="search-input" 
                            required 
-                           placeholder="Ingrese el nombre del proyecto">
-                    <span class="form-helper">Nombre descriptivo del proyecto</span>
+                           placeholder="Nombre del cliente">
+                    <span class="form-helper">Empresa cliente (obligatorio)</span>
                 </div>
 
                 <div class="form-group horizontal-group">
-                    <label for="consultantName">Consultor:</label>
+                    <label for="consultor">Consultor:</label>
                     <input type="text" 
-                           id="consultantName" 
+                           id="consultor" 
                            class="search-input" 
                            required 
                            placeholder="Nombre del consultor asignado">
-                    <span class="form-helper">Responsable del proyecto</span>
-                </div>
-
-                <div class="form-group horizontal-group">
-                    <label for="currentDate">Fecha:</label>
-                    <div class="date-display" id="currentDate">
-                        Cargando fecha...
-                    </div>
-                    <span class="form-helper">Fecha actual del sistema</span>
+                    <span class="form-helper">Responsable del proyecto (obligatorio)</span>
                 </div>
             </div>
         </div>
@@ -90,7 +83,8 @@
             <div class="card-body">
                 <div class="form-group">
                     <label for="languageCode">Idioma:</label>
-                    <input type="text" id="languageCode" class="search-input" value="en-US" required placeholder="ej: en-US">
+                    <input type="text" id="languageCode" class="search-input" value="en-us" required placeholder="ej: en-us, es-mx">
+                    <span class="form-helper">Código de idioma en formato ISO (ej: en-us)</span>
                 </div>
 
                 <div class="form-group">
@@ -106,7 +100,7 @@
                         </div>
                         <div class="summary-item" style="width: 100%;">
                             <span id="selectedCountriesPreview" style="font-size: 13px; color: var(--color-gray-darker); font-weight: 600;">
-                                Ningún país seleccionado
+                                USA (default)
                             </span>
                         </div>
                     </div>
@@ -143,7 +137,7 @@
 
 .form-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-lg);
     align-items: start;
 }
@@ -168,22 +162,8 @@
     flex-direction: column;
 }
 
-/* Estilos específicos para la fecha */
-.date-display {
-    padding: 8px 12px;
-    background-color: var(--color-gray-light);
-    border: 1px solid var(--color-gray);
-    border-radius: 4px;
-    color: var(--color-gray-darker);
-    font-size: 14px;
-    margin-top: 4px;
-    min-height: 36px;
-    display: flex;
-    align-items: center;
-}
-
 /* Asegurar consistencia en alturas */
-.search-input, .date-display {
+.search-input {
     height: 36px;
     box-sizing: border-box;
 }
@@ -202,11 +182,11 @@
 }
 </style>
 
+<!-- Áreas para mostrar estado y resultados -->
 <div id="status" style="display: none;"></div>
+<div id="result" style="display: none;"></div>
 
-<div id="result" style="display: none;">
-</div>
-
+<!-- Modal para selección de países -->
 <div id="countryModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -233,7 +213,7 @@
                     </button>
                 </div>
                 <div class="badge" id="selectedCountriesCount">
-                    0 seleccionados
+                    1 seleccionado
                 </div>
             </div>
 
@@ -253,6 +233,7 @@
     </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script src="{{ url_for('static', path='/js/upload.js') }}"></script>
 {% endblock %}

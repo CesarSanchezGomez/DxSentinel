@@ -1,0 +1,17 @@
+{
+  "__comment_creation__": {
+    "generated_at": "2026-02-01T10:20:10.553231",
+    "generated_by": "MetadataManager",
+    "message": "Información de creación del sistema",
+    "parameters": {
+      "cliente": "default_cliente",
+      "consultor": "default_consultor",
+      "id": "default_id"
+    }
+  },
+  "cliente": "default_cliente",
+  "consultor": "default_consultor",
+  "estructura_creacion": "/metadata/default_id/20260201_v1/",
+  "fecha_creacion": "2026-02-01T10:20:10.553231",
+  "id": "default_id"
+}

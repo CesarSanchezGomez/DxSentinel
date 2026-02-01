@@ -3,98 +3,129 @@
 ```
 DxSentinel/
 │
-├── backend/
+.
+├── .env
+├── .gitignore
+├── README.md
+├── requirements.txt
+│
+├── backend
 │   ├── __init__.py
 │   │
-│   ├── app/
-│   │   ├── __init__.py
+│   ├── app
 │   │   ├── main.py
+│   │   ├── __init__.py
 │   │   │
-│   │   ├── api/
-│   │   │   ├── __init__.py
-│   │   │   ├── deps.py
-│   │   │   └── v1/
-│   │   │       ├── __init__.py
+│   │   ├── api
+│   │   │   └── v1
 │   │   │       ├── router.py
-│   │   │       └── endpoints/
-│   │   │           ├── __init__.py
-│   │   │           ├── upload.py
-│   │   │           ├── process.py
-│   │   │           └── health.py
+│   │   │       ├── extract_counties.py
+│   │   │       ├── health.py
+│   │   │       ├── process.py
+│   │   │       ├── split.py
+│   │   │       └── upload.py
 │   │   │
-│   │   ├── auth/
-│   │   │   ├── __init__.py
+│   │   ├── auth
 │   │   │   ├── dependencies.py
 │   │   │   ├── router.py
 │   │   │   └── supabase_client.py
 │   │   │
-│   │   ├── core/
-│   │   │   ├── __init__.py
+│   │   ├── core
 │   │   │   ├── config.py
 │   │   │   └── storage.py
 │   │   │
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   ├── upload.py
-│   │   │   └── process.py
+│   │   ├── models
+│   │   │   ├── process.py
+│   │   │   └── upload.py
 │   │   │
-│   │   └── services/
-│   │       ├── __init__.py
+│   │   └── services
 │   │       ├── file_service.py
 │   │       └── parser_service.py
 │   │
-│   ├── core/
-│   │   ├── __init__.py
+│   ├── core
+│   │   ├── generators
+│   │   │   ├── golden_record
+│   │   │   │   ├── csv_generator.py
+│   │   │   │   ├── element_processor.py
+│   │   │   │   ├── exceptions.py
+│   │   │   │   ├── field_filter.py
+│   │   │   │   ├── field_finder.py
+│   │   │   │   └── language_resolver.py
+│   │   │   │
+│   │   │   ├── metadata
+│   │   │   │   ├── business_key_resolver.py
+│   │   │   │   ├── field_categorizer.py
+│   │   │   │   ├── field_identifier_extractor.py
+│   │   │   │   └── metadata_generator.py
+│   │   │   │
+│   │   │   └── splitter
+│   │   │       └── layout_splitter.py
 │   │   │
-│   │   ├── parsing/
-│   │   │   ├── __init__.py
-│   │   │   ├── xml_loader.py
-│   │   │   ├── xml_parser.py
-│   │   │   ├── xml_normalizer.py
-│   │   │   ├── xml_elements.py
-│   │   │   └── exceptions.py
-│   │   │
-│   │   └── generators/
-│   │       └── golden_record/
-│   │           ├── __init__.py
-│   │           ├── csv_generator.py
-│   │           ├── element_processor.py
-│   │           ├── field_filter.py
-│   │           ├── field_finder.py
-│   │           ├── language_resolver.py
-│   │           └── exceptions.py
+│   │   └── parsing
+│   │       ├── main.py
+│   │       ├── orchestrator.py
+│   │       ├── metadata_manager.py
+│   │       │
+│   │       ├── exceptions
+│   │       │   └── xml_exceptions.py
+│   │       │
+│   │       ├── loaders
+│   │       │   └── xml_loader.py
+│   │       │
+│   │       ├── models
+│   │       │   └── xml_elements.py
+│   │       │
+│   │       ├── normalizers
+│   │       │   └── xml_normalizer.py
+│   │       │
+│   │       ├── parsers
+│   │       │   └── xml_parser.py
+│   │       │
+│   │       └── utils
+│   │           └── xml_merger.py
 │   │
-│   └── storage/
-│       ├── uploads/
-│       └── outputs/
+│   └── storage
+│       ├── metadata
+│       │   └── process_1769928382_USA
+│       │       └── 004622_v1
+│       │           ├── document.json
+│       │           ├── document.pkl
+│       │           └── metadata.json
+│       │
+│       ├── outputs
+│       │   ├── golden_record_template_en-us_USA.csv
+│       │   ├── golden_record_template_en-us_USA_metadata.json
+│       │   ├── golden_record_template_en-us_MEX.csv
+│       │   ├── golden_record_template_en-us_MEX_metadata.json
+│       │   ├── golden_record_template_es-mx_USA.csv
+│       │   └── golden_record_template_es-mx_USA_metadata.json
+│       │
+│       └── uploads
+│           └── *.xml
 │
-├── frontend/
-│   ├── static/
-│   │   ├── js/
-│   │   │   ├── upload.js
+├── frontend
+│   ├── static
+│   │   ├── css
+│   │   │   └── *.css
+│   │   ├── js
 │   │   │   ├── auth-callback.js
 │   │   │   ├── auth-login.js
-│   │   │   └── process.js
-│   │   │
-│   │   ├── css/
-│   │   │   └── styles.css
-│   │   │
-│   │   └── images/
+│   │   │   ├── split.js
+│   │   │   └── upload.js
+│   │   └── images
 │   │       ├── favicon.ico
-│   │       ├── logo-dxgrow-300x180.png
-│   │       └── logo-dxgrow-inverted-300-180.png
+│   │       └── logo-*.png
 │   │
-│   └── templates/
+│   └── templates
 │       ├── base.html
-│       ├── index.html
-│       ├── upload.html
+│       ├── home.html
 │       ├── login.html
-│       └── callback.html
+│       ├── callback.html
+│       ├── split.html
+│       └── upload.html
 │
-├── .env
-├── requirements.txt
-└── README.md
-```
+└── .git
+    └── (repositorio git interno)
 
 
 

@@ -1,14 +1,14 @@
+#backend/core/parsing/orchestrator.py
 """
 Orchestrator para el módulo completo de parsing XML.
 Ahora con soporte para metadata persistente.
 """
-from typing import Dict, Any, List, Optional, Union, Tuple
+from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
-import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from .loaders.xml_loader import XMLLoader
-from .parsers.xml_parser import XMLParser, parse_multiple_xml_files
+from .parsers.xml_parser import XMLParser
 from .normalizers.xml_normalizer import XMLNormalizer
 from .models.xml_elements import XMLDocument
 from .utils.xml_merger import _mark_nodes_origin, _fuse_csf_with_main
@@ -39,38 +39,16 @@ class XMLParsingOrchestrator:
         self.normalizer = XMLNormalizer(preserve_all_data=True)
         
         # Construir metadata a partir de los parámetros
-        metadata_config = self._build_metadata_config(id, cliente, consultor)
+        metadata_config = {
+            'id': id,
+            'cliente': cliente,
+            'consultor': consultor
+        }
         self.metadata_manager = get_metadata_manager(**metadata_config)
-    
-    def _build_metadata_config(self, 
-                              id: Optional[str] = None,
-                              cliente: Optional[str] = None,
-                              consultor: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Construye configuración para metadata basada en los parámetros.
-        
-        Args:
-            id: ID único
-            cliente: Nombre del cliente
-            consultor: Nombre del consultor
-            
-        Returns:
-            Configuración para el metadata manager
-        """
-        config = {}
-        
-        if id:
-            config['id'] = id
-        
-        # Usar valores proporcionados o valores por defecto
-        config['cliente'] = cliente or "default_client"
-        config['consultor'] = consultor or "default_consultant"
-        
-        return config
     
     def parse_and_store(self,
                        xml_path: Union[str, Path],
-                       instance_id: str,
+                       id: str,
                        source_name: Optional[str] = None,
                        origin: str = 'main',
                        metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -79,7 +57,7 @@ class XMLParsingOrchestrator:
         
         Args:
             xml_path: Ruta al archivo XML
-            instance_id: ID de la instancia para metadata
+            id: ID para metadata
             source_name: Nombre identificador del origen
             origin: Origen de los datos
             metadata: Metadata adicional a almacenar
@@ -101,7 +79,7 @@ class XMLParsingOrchestrator:
         # Almacenar en metadata
         storage_info = self.metadata_manager.save_document(
             document=document,
-            instance_id=instance_id,
+            id=id,
             metadata={
                 'xml_path': str(xml_path),
                 'source_name': source_name,
@@ -117,7 +95,7 @@ class XMLParsingOrchestrator:
     
     def parse_fuse_and_store(self,
                             main_xml_path: Union[str, Path],
-                            instance_id: str,
+                            id: str,
                             csf_xml_paths: Optional[List[Union[str, Path]]] = None,
                             metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
@@ -125,7 +103,7 @@ class XMLParsingOrchestrator:
         
         Args:
             main_xml_path: Ruta al archivo principal
-            instance_id: ID de la instancia
+            id: ID para metadata
             csf_xml_paths: Lista de rutas a archivos CSF
             metadata: Metadata adicional
             
@@ -165,7 +143,6 @@ class XMLParsingOrchestrator:
         
         # Fusionar si hay múltiples documentos
         if len(documents) > 1:
-            from .utils.xml_merger import _fuse_csf_with_main
             fused_document = _fuse_csf_with_main(documents)
         else:
             fused_document = documents[0]
@@ -176,7 +153,7 @@ class XMLParsingOrchestrator:
         # Almacenar en metadata
         storage_info = self.metadata_manager.save_document(
             document=fused_document,
-            instance_id=instance_id,
+            id=id,
             metadata={
                 'main_xml_path': str(main_xml_path),
                 'csf_xml_paths': [str(p) for p in (csf_xml_paths or [])],
@@ -191,14 +168,14 @@ class XMLParsingOrchestrator:
         }
     
     def load_from_metadata(self,
-                          instance_id: str,
+                          id: str,
                           version: Optional[str] = None,
                           normalize: bool = True) -> Dict[str, Any]:
         """
         Carga un documento desde metadata.
         
         Args:
-            instance_id: ID de la instancia
+            id: ID de la instancia
             version: Versión específica (última si None)
             normalize: Si se debe normalizar el documento cargado
             
@@ -206,10 +183,9 @@ class XMLParsingOrchestrator:
             Documento cargado (normalizado o XMLDocument)
         """
         # Cargar documento desde metadata
-        document = self.metadata_manager.load_document(instance_id, version)
+        document = self.metadata_manager.load_document(id, version)
         
         if normalize:
-            # Normalizar para consistencia con otras funciones
             normalized = self.normalizer.normalize_document(document)
             return {
                 'document': document,
@@ -221,26 +197,25 @@ class XMLParsingOrchestrator:
             }
     
     def get_metadata_info(self,
-                         instance_id: str,
+                         id: str,
                          version: Optional[str] = None) -> Dict[str, Any]:
         """
         Obtiene información de metadata sin cargar el documento completo.
         
         Args:
-            instance_id: ID de la instancia
+            id: ID de la instancia
             version: Versión específica (última si None)
             
         Returns:
             Información de metadata
         """
-        return self.metadata_manager.load_metadata(instance_id, version)
+        return self.metadata_manager.load_metadata(id, version)
     
     # Funciones existentes (compatibilidad hacia atrás)
     def parse_single_file(self, 
                          xml_path: Union[str, Path],
                          source_name: Optional[str] = None,
                          origin: str = 'main') -> Dict[str, Any]:
-        """Mantener para compatibilidad."""
         root = self.loader.load_from_file(xml_path, source_name)
         document = self.parser.parse_document(root, source_name)
         
@@ -248,25 +223,8 @@ class XMLParsingOrchestrator:
             _mark_nodes_origin(document.root, origin)
         
         return self.normalizer.normalize_document(document)
-    
-    def parse_and_fuse_files(self,
-                            main_xml_path: Union[str, Path],
-                            csf_xml_paths: Optional[List[Union[str, Path]]] = None) -> Dict[str, Any]:
-        """Mantener para compatibilidad."""
-        files = [{'path': str(main_xml_path), 'type': 'main', 'source_name': 'SDM_Principal'}]
-        
-        if csf_xml_paths:
-            for i, csf_path in enumerate(csf_xml_paths):
-                files.append({
-                    'path': str(csf_path),
-                    'type': 'csf',
-                    'source_name': f'CSF_SDM_{i}'
-                })
-        
-        return parse_multiple_xml_files(files)
 
 
-# Función de conveniencia mejorada
 def create_orchestrator(element_duplication_mapping: Optional[Dict] = None,
                        id: Optional[str] = None,
                        cliente: Optional[str] = None,
@@ -288,13 +246,11 @@ def create_orchestrator(element_duplication_mapping: Optional[Dict] = None,
     )
 
 
-# Función principal simplificada con metadata
 def parse_and_store_xml(main_xml_path: Union[str, Path],
-                       instance_id: str,
+                       id: str,
                        csf_xml_path: Optional[Union[str, Path]] = None,
                        element_duplication_mapping: Optional[Dict] = None,
                        metadata: Optional[Dict[str, Any]] = None,
-                       id: Optional[str] = None,
                        cliente: Optional[str] = None,
                        consultor: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -302,11 +258,10 @@ def parse_and_store_xml(main_xml_path: Union[str, Path],
     
     Args:
         main_xml_path: Ruta al archivo XML principal
-        instance_id: ID de la instancia
+        id: ID único para metadata
         csf_xml_path: Ruta(s) a archivos CSF
         element_duplication_mapping: Mapeo para duplicación
         metadata: Metadata adicional
-        id: ID único para metadata
         cliente: Nombre del cliente
         consultor: Nombre del consultor
         
@@ -324,35 +279,32 @@ def parse_and_store_xml(main_xml_path: Union[str, Path],
         csf_paths = [csf_xml_path] if not isinstance(csf_xml_path, list) else csf_xml_path
         return orchestrator.parse_fuse_and_store(
             main_xml_path=main_xml_path,
-            instance_id=instance_id,
+            id=id,
             csf_xml_paths=csf_paths,
             metadata=metadata
         )
     else:
         return orchestrator.parse_and_store(
             xml_path=main_xml_path,
-            instance_id=instance_id,
+            id=id,
             source_name='SDM_Principal',
             origin='main',
             metadata=metadata
         )
 
 
-# Función para carga desde metadata
-def load_from_metadata(instance_id: str,
+def load_from_metadata(id: str,
                       version: Optional[str] = None,
                       normalize: bool = True,
-                      id: Optional[str] = None,
                       cliente: Optional[str] = None,
                       consultor: Optional[str] = None) -> Dict[str, Any]:
     """
     Carga desde metadata.
     
     Args:
-        instance_id: ID de la instancia
+        id: ID de la instancia
         version: Versión específica
         normalize: Si se debe normalizar
-        id: ID único para metadata
         cliente: Nombre del cliente
         consultor: Nombre del consultor
         
@@ -364,4 +316,4 @@ def load_from_metadata(instance_id: str,
         cliente=cliente,
         consultor=consultor
     )
-    return orchestrator.load_from_metadata(instance_id, version, normalize)
+    return orchestrator.load_from_metadata(id, version, normalize)
