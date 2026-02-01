@@ -22,8 +22,7 @@ class MetadataManager:
     def __init__(self, 
                  id: Optional[str] = None,
                  cliente: Optional[str] = None,
-                 consultor: Optional[str] = None,
-                 fecha: Optional[str] = None):
+                 consultor: Optional[str] = None):
         """
         Inicializa el gestor de metadata.
         
@@ -31,23 +30,14 @@ class MetadataManager:
             id: ID único para la instancia
             cliente: Nombre del cliente
             consultor: Nombre del consultor
-            fecha: Fecha de procesamiento (formato: DDMMYY)
         """
         # Directorio base fijo según requerimientos
         self.base_dir = Path("backend/storage/metadata")
         
-        # Si se proporciona id, usar estructura: metadata/[id]/[version]/[archivos]
+        # Si se proporciona id, usar estructura: metadata/[id]/[cliente_consultor]/[archivos]
         if id:
-            # Determinar la fecha a usar
-            if fecha:
-                try:
-                    # Validar formato de fecha
-                    datetime.strptime(fecha, "%d%m%y")
-                    fecha_actual = fecha
-                except ValueError:
-                    fecha_actual = datetime.now().strftime("%d%m%y")
-            else:
-                fecha_actual = datetime.now().strftime("%d%m%y")
+            # Obtener fecha actual para el nombre de directorio
+            fecha_actual = datetime.now().strftime("%d%m%y")
             
             # Construir estructura de directorios
             self.base_dir = self.base_dir / id / fecha_actual
@@ -64,7 +54,7 @@ class MetadataManager:
             'id': id,
             'cliente': cliente or "default_client",
             'consultor': consultor or "default_consultant",
-            'fecha': fecha or datetime.now().strftime("%d%m%y")
+            'fecha': datetime.now().strftime("%d%m%y")  # Siempre usar fecha actual
         }
     
     def _get_instance_dir(self, instance_id: str) -> Path:
@@ -514,8 +504,7 @@ _metadata_manager = None
 
 def get_metadata_manager(id: Optional[str] = None,
                         cliente: Optional[str] = None,
-                        consultor: Optional[str] = None,
-                        fecha: Optional[str] = None) -> MetadataManager:
+                        consultor: Optional[str] = None) -> MetadataManager:
     """
     Obtiene instancia singleton del MetadataManager.
     
@@ -523,7 +512,6 @@ def get_metadata_manager(id: Optional[str] = None,
         id: ID único para la instancia
         cliente: Nombre del cliente
         consultor: Nombre del consultor
-        fecha: Fecha de procesamiento (formato: DDMMYY)
         
     Returns:
         Instancia de MetadataManager
@@ -531,7 +519,7 @@ def get_metadata_manager(id: Optional[str] = None,
     global _metadata_manager
     
     # Si no hay parámetros específicos, usar configuración por defecto
-    if id is None and cliente is None and consultor is None and fecha is None:
+    if id is None and cliente is None and consultor is None:
         if _metadata_manager is None:
             _metadata_manager = MetadataManager()
     else:
@@ -539,8 +527,7 @@ def get_metadata_manager(id: Optional[str] = None,
         _metadata_manager = MetadataManager(
             id=id,
             cliente=cliente,
-            consultor=consultor,
-            fecha=fecha
+            consultor=consultor
         )
     
     return _metadata_manager

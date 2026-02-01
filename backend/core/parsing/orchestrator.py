@@ -24,8 +24,7 @@ class XMLParsingOrchestrator:
                  element_duplication_mapping: Optional[Dict] = None,
                  id: Optional[str] = None,
                  cliente: Optional[str] = None,
-                 consultor: Optional[str] = None,
-                 fecha: Optional[str] = None):
+                 consultor: Optional[str] = None):
         """
         Inicializa el orquestador con parámetros para metadata.
         
@@ -34,21 +33,19 @@ class XMLParsingOrchestrator:
             id: ID único para la instancia de metadata
             cliente: Nombre del cliente
             consultor: Nombre del consultor
-            fecha: Fecha de procesamiento (formato: DDMMYY)
         """
         self.loader = XMLLoader()
         self.parser = XMLParser(element_duplication_mapping)
         self.normalizer = XMLNormalizer(preserve_all_data=True)
         
         # Construir metadata a partir de los parámetros
-        metadata_config = self._build_metadata_config(id, cliente, consultor, fecha)
+        metadata_config = self._build_metadata_config(id, cliente, consultor)
         self.metadata_manager = get_metadata_manager(**metadata_config)
     
     def _build_metadata_config(self, 
                               id: Optional[str] = None,
                               cliente: Optional[str] = None,
-                              consultor: Optional[str] = None,
-                              fecha: Optional[str] = None) -> Dict[str, Any]:
+                              consultor: Optional[str] = None) -> Dict[str, Any]:
         """
         Construye configuración para metadata basada en los parámetros.
         
@@ -56,7 +53,6 @@ class XMLParsingOrchestrator:
             id: ID único
             cliente: Nombre del cliente
             consultor: Nombre del consultor
-            fecha: Fecha de procesamiento
             
         Returns:
             Configuración para el metadata manager
@@ -69,17 +65,6 @@ class XMLParsingOrchestrator:
         # Usar valores proporcionados o valores por defecto
         config['cliente'] = cliente or "default_client"
         config['consultor'] = consultor or "default_consultant"
-        
-        if fecha:
-            try:
-                # Validar formato de fecha (debe ser DDMMYY o similar)
-                datetime.strptime(fecha, "%d%m%y")
-                config['fecha'] = fecha
-            except ValueError:
-                # Si la fecha no es válida, usar fecha actual
-                config['fecha'] = datetime.now().strftime("%d%m%y")
-        else:
-            config['fecha'] = datetime.now().strftime("%d%m%y")
         
         return config
     
@@ -285,8 +270,7 @@ class XMLParsingOrchestrator:
 def create_orchestrator(element_duplication_mapping: Optional[Dict] = None,
                        id: Optional[str] = None,
                        cliente: Optional[str] = None,
-                       consultor: Optional[str] = None,
-                       fecha: Optional[str] = None) -> XMLParsingOrchestrator:
+                       consultor: Optional[str] = None) -> XMLParsingOrchestrator:
     """
     Crea y retorna un orquestador configurado.
     
@@ -295,14 +279,12 @@ def create_orchestrator(element_duplication_mapping: Optional[Dict] = None,
         id: ID único para la instancia de metadata
         cliente: Nombre del cliente
         consultor: Nombre del consultor
-        fecha: Fecha de procesamiento (formato: DDMMYY)
     """
     return XMLParsingOrchestrator(
         element_duplication_mapping=element_duplication_mapping,
         id=id,
         cliente=cliente,
-        consultor=consultor,
-        fecha=fecha
+        consultor=consultor
     )
 
 
@@ -314,8 +296,7 @@ def parse_and_store_xml(main_xml_path: Union[str, Path],
                        metadata: Optional[Dict[str, Any]] = None,
                        id: Optional[str] = None,
                        cliente: Optional[str] = None,
-                       consultor: Optional[str] = None,
-                       fecha: Optional[str] = None) -> Dict[str, Any]:
+                       consultor: Optional[str] = None) -> Dict[str, Any]:
     """
     Pipeline completo con almacenamiento en metadata.
     
@@ -328,7 +309,6 @@ def parse_and_store_xml(main_xml_path: Union[str, Path],
         id: ID único para metadata
         cliente: Nombre del cliente
         consultor: Nombre del consultor
-        fecha: Fecha de procesamiento
         
     Returns:
         Dict con 'storage' (info metadata) y 'normalized' (modelo)
@@ -337,8 +317,7 @@ def parse_and_store_xml(main_xml_path: Union[str, Path],
         element_duplication_mapping=element_duplication_mapping,
         id=id,
         cliente=cliente,
-        consultor=consultor,
-        fecha=fecha
+        consultor=consultor
     )
     
     if csf_xml_path:
@@ -365,8 +344,7 @@ def load_from_metadata(instance_id: str,
                       normalize: bool = True,
                       id: Optional[str] = None,
                       cliente: Optional[str] = None,
-                      consultor: Optional[str] = None,
-                      fecha: Optional[str] = None) -> Dict[str, Any]:
+                      consultor: Optional[str] = None) -> Dict[str, Any]:
     """
     Carga desde metadata.
     
@@ -377,7 +355,6 @@ def load_from_metadata(instance_id: str,
         id: ID único para metadata
         cliente: Nombre del cliente
         consultor: Nombre del consultor
-        fecha: Fecha de procesamiento
         
     Returns:
         Documento cargado
@@ -385,7 +362,6 @@ def load_from_metadata(instance_id: str,
     orchestrator = create_orchestrator(
         id=id,
         cliente=cliente,
-        consultor=consultor,
-        fecha=fecha
+        consultor=consultor
     )
     return orchestrator.load_from_metadata(instance_id, version, normalize)
