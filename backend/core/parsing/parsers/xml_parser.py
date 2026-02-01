@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Any, Tuple
 import xml.etree.ElementTree as ET
 import re
+from ..filters.xml_filter import create_hris_filter 
 
 from ..models.xml_elements import XMLNode, XMLDocument, NodeType
 from ..loaders.xml_loader import XMLLoader
@@ -542,6 +543,11 @@ def parse_multiple_xml_files(files: List[Dict[str, str]]) -> Dict[str, Any]:
         
         if file_type == 'main':
             _mark_nodes_origin(document.root, 'sdm')
+        
+        # APLICAR FILTRO HRIS (solo para archivos main)
+        if file_type == 'main':
+            filter_instance = create_hris_filter(filter_csf=False)
+            document = filter_instance.filter_document(document, file_type)
         
         documents.append(document)
     

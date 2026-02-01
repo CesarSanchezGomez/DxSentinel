@@ -6,6 +6,7 @@ Ahora con soporte para metadata persistente.
 from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
 from datetime import datetime
+from .filters.xml_filter import create_hris_filter
 
 from .loaders.xml_loader import XMLLoader
 from .parsers.xml_parser import XMLParser
@@ -100,15 +101,6 @@ class XMLParsingOrchestrator:
                             metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Parsea, fusiona y almacena múltiples archivos XML.
-        
-        Args:
-            main_xml_path: Ruta al archivo principal
-            id: ID para metadata
-            csf_xml_paths: Lista de rutas a archivos CSF
-            metadata: Metadata adicional
-            
-        Returns:
-            Diccionario con información de almacenamiento y modelo normalizado
         """
         # Preparar lista de archivos
         files = [{
@@ -138,6 +130,9 @@ class XMLParsingOrchestrator:
             
             if file_info['type'] == 'main':
                 _mark_nodes_origin(document.root, 'sdm')
+                # APLICAR FILTRO HRIS
+                filter_instance = create_hris_filter(filter_csf=False)
+                document = filter_instance.filter_document(document, 'main')
             
             documents.append(document)
         
@@ -158,6 +153,50 @@ class XMLParsingOrchestrator:
                 'main_xml_path': str(main_xml_path),
                 'csf_xml_paths': [str(p) for p in (csf_xml_paths or [])],
                 'file_count': len(files),
+                'filter_applied': 'hris-only',  # Registrar que se aplicó filtro
+                **(metadata or {})
+            }
+        )
+        
+        return {
+            'storage': storage_info,
+            'normalized': normalized
+        }
+    
+    def parse_and_store(self,
+                       xml_path: Union[str, Path],
+                       id: str,
+                       source_name: Optional[str] = None,
+                       origin: str = 'main',
+                       metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Parsea un archivo XML y lo almacena en metadata.
+        """
+        # Cargar y parsear XML
+        root = self.loader.load_from_file(xml_path, source_name)
+        document = self.parser.parse_document(root, source_name)
+        
+        # Marcar origen
+        if origin != 'main':
+            _mark_nodes_origin(document.root, origin)
+        
+        # APLICAR FILTRO HRIS solo para documentos main
+        if origin == 'main':
+            filter_instance = create_hris_filter(filter_csf=False)
+            document = filter_instance.filter_document(document, 'main')
+        
+        # Normalizar para respuesta inmediata
+        normalized = self.normalizer.normalize_document(document)
+        
+        # Almacenar en metadata
+        storage_info = self.metadata_manager.save_document(
+            document=document,
+            id=id,
+            metadata={
+                'xml_path': str(xml_path),
+                'source_name': source_name,
+                'origin': origin,
+                'filter_applied': 'hris-only' if origin == 'main' else 'none',
                 **(metadata or {})
             }
         )

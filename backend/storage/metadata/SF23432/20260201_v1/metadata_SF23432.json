@@ -1,0 +1,70 @@
+{
+  "system_info": {
+    "created_by": "MetadataManager",
+    "creation_timestamp": "2026-02-01T10:49:22.314477",
+    "parameters": {
+      "id": "SF23432",
+      "cliente": "NADRO",
+      "consultor": "DIEGO FLORES"
+    },
+    "directory_structure": "/metadata/SF23432/20260201_v1/"
+  },
+  "document_info": {
+    "id": "SF23432",
+    "timestamp": "2026-02-01T10:49:22.300082",
+    "content_hash": "5db438485558",
+    "source_name": "SDM_Principal",
+    "namespaces": {
+      "xml": "http://www.w3.org/XML/1998/namespace"
+    },
+    "version_xml": null,
+    "encoding": null,
+    "stats": {
+      "node_count": 1702,
+      "unique_tags": [
+        "background-element",
+        "background-element-ref",
+        "country",
+        "country-specific-fields",
+        "custom-filters",
+        "data-field",
+        "dg-filters",
+        "display-format",
+        "display-order-follows",
+        "edit-template",
+        "element-permission",
+        "field-criteria",
+        "filter-module",
+        "format",
+        "format-group",
+        "hris-action",
+        "hris-element",
+        "hris-element-ref",
+        "hris-field",
+        "hris-field-ref",
+        "hris-mapping",
+        "hris-section",
+        "hris-sync-mappings",
+        "instruction",
+        "my-filter",
+        "permission-group-filter",
+        "picklist",
+        "rating-field",
+        "reg-ex",
+        "standard-element",
+        "standard-element-ref",
+        "succession-data-model",
+        "tab-element",
+        "trigger-rule",
+        "view-template"
+      ]
+    }
+  },
+  "custom_metadata": {
+    "main_xml_path": "backend\\storage\\uploads\\20260201_104920_94af1f6e.xml",
+    "csf_xml_paths": [
+      "backend\\storage\\uploads\\20260201_104913_e8182b6f.xml"
+    ],
+    "file_count": 2
+  }
+}

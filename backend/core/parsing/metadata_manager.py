@@ -9,7 +9,6 @@ import hashlib
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 from datetime import datetime
-import shutil
 
 from .models.xml_elements import XMLDocument, XMLNode
 
@@ -46,7 +45,7 @@ class MetadataManager:
         self.base_dir = Path("backend/storage/metadata") / self.id / f"{fecha_actual}_{version}"
         self.base_dir.mkdir(parents=True, exist_ok=True)
         
-        # Parámetros del sistema
+        # Parámetros del sistema para incluir en metadata
         self.metadata_params = {
             'id': self.id,
             'cliente': self.cliente,
@@ -54,9 +53,6 @@ class MetadataManager:
             'fecha_creacion': datetime.now().isoformat(),
             'estructura_creacion': f"/metadata/{self.id}/{fecha_actual}_{version}/"
         }
-        
-        # Agregar comentarios en archivo de parámetros
-        self._save_creation_info()
     
     def _get_next_version(self, id: str, fecha: str) -> str:
         """
@@ -92,26 +88,6 @@ class MetadataManager:
         
         next_version = max(existing_versions) + 1
         return f"v{next_version}"
-    
-    def _save_creation_info(self):
-        """Guarda información de creación como comentario en JSON."""
-        creation_info = {
-            "__comment_creation__": {
-                "message": "Información de creación del sistema",
-                "generated_by": "MetadataManager",
-                "generated_at": self.metadata_params['fecha_creacion'],
-                "parameters": {
-                    "id": self.metadata_params['id'],
-                    "cliente": self.metadata_params['cliente'],
-                    "consultor": self.metadata_params['consultor']
-                }
-            },
-            **self.metadata_params
-        }
-        
-        info_file = self.base_dir / "creation_info.json"
-        with open(info_file, 'w', encoding='utf-8') as f:
-            json.dump(creation_info, f, indent=2, ensure_ascii=False, sort_keys=True)
     
     def _calculate_content_hash(self, document: XMLDocument) -> str:
         """
@@ -181,33 +157,43 @@ class MetadataManager:
         # Calcular hash del contenido
         content_hash = self._calculate_content_hash(document)
         
-        # Preparar metadata completa
+        # Preparar metadata completa con información de creación
         full_metadata = {
-            'id': document_id,
-            'timestamp': timestamp.isoformat(),
-            'content_hash': content_hash,
-            'source_name': document.source_name,
-            'namespaces': document.namespaces,
-            'version_xml': document.version,
-            'encoding': document.encoding,
-            'system_metadata': self.metadata_params,
-            'custom_metadata': metadata or {},
-            'stats': {
-                'node_count': self._count_nodes(document.root),
-                'unique_tags': self._collect_unique_tags(document.root)
-            }
-        }
-        
-        # Agregar comentario de creación
-        full_metadata_with_comment = {
-            "__comment__": "Metadata generada automáticamente por el sistema",
-            **full_metadata
+            # Información de creación del sistema (como comentarios en la estructura)
+            'system_info': {
+                'created_by': 'MetadataManager',
+                'creation_timestamp': datetime.now().isoformat(),
+                'parameters': {
+                    'id': self.id,
+                    'cliente': self.cliente,
+                    'consultor': self.consultor
+                },
+                'directory_structure': f"/metadata/{self.id}/{self.base_dir.name}/"
+            },
+            
+            # Metadata del documento
+            'document_info': {
+                'id': document_id,
+                'timestamp': timestamp.isoformat(),
+                'content_hash': content_hash,
+                'source_name': document.source_name,
+                'namespaces': document.namespaces,
+                'version_xml': document.version,
+                'encoding': document.encoding,
+                'stats': {
+                    'node_count': self._count_nodes(document.root),
+                    'unique_tags': self._collect_unique_tags(document.root)
+                }
+            },
+            
+            # Metadata personalizada
+            'custom_metadata': metadata or {}
         }
         
         # Guardar metadata
         metadata_file = self.base_dir / f"metadata_{document_id}.json"
         with open(metadata_file, 'w', encoding='utf-8') as f:
-            json.dump(full_metadata_with_comment, f, indent=2, ensure_ascii=False)
+            json.dump(full_metadata, f, indent=2, ensure_ascii=False)
         
         # Guardar documento serializado
         document_file = self.base_dir / f"document_{document_id}.pkl"
@@ -226,8 +212,7 @@ class MetadataManager:
             'document_file': str(document_file),
             'json_file': str(json_file),
             'content_hash': content_hash,
-            'timestamp': timestamp.isoformat(),
-            'system_metadata': self.metadata_params
+            'timestamp': timestamp.isoformat()
         }
     
     def load_document(self,
@@ -355,9 +340,9 @@ class MetadataManager:
                         
                         versions.append({
                             'version': item.name,
-                            'timestamp': metadata.get('timestamp', ''),
-                            'content_hash': metadata.get('content_hash', ''),
-                            'source_name': metadata.get('source_name', ''),
+                            'timestamp': metadata.get('document_info', {}).get('timestamp', ''),
+                            'content_hash': metadata.get('document_info', {}).get('content_hash', ''),
+                            'source_name': metadata.get('document_info', {}).get('source_name', ''),
                             'path': str(item)
                         })
                     except:
