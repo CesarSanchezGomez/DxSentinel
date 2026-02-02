@@ -1,3 +1,4 @@
+<!-- frontend/templates/structure.html -->
 {% extends "base.html" %}
 
 {% block title %}Structure Version{% endblock %}
@@ -16,8 +17,13 @@
     <form id="structureForm" class="form-content">
         <div class="form-group">
             <label for="instanceId">ID de Instancia:</label>
-            <input type="text" id="instanceId" class="text-input" placeholder="Ej: SF12321" required>
-            <small>Ingresa el ID de la instancia de metadata</small>
+            <div class="search-row">
+                <input type="text" id="instanceId" class="search-input" placeholder="Ej: SF12321" required>
+                <button type="button" id="searchBtnHeader" class="btn-search">
+                    Buscar
+                </button>
+            </div>
+            <small class="form-hint">Ingresa el ID de la instancia de metadata</small>
         </div>
 
         <div class="form-group">
@@ -25,15 +31,15 @@
                 <input type="checkbox" id="lastVersionCheck" checked>
                 Última versión
             </label>
-            <small>Si está marcado, se usará la versión más reciente</small>
+            <small class="form-hint">Si está marcado, se usará la versión más reciente</small>
         </div>
 
         <div class="form-group" id="versionGroup" style="display: none;">
             <label for="versionSelect">Versión:</label>
-            <select id="versionSelect" class="select-input" disabled>
+            <select id="versionSelect" class="search-input" disabled>
                 <option value="">Cargando versiones...</option>
             </select>
-            <small>Selecciona una versión específica</small>
+            <small class="form-hint">Selecciona una versión específica</small>
         </div>
 
         <!-- Preview Section -->
@@ -68,11 +74,7 @@
                 </div>
             </div>
 
-            <!-- JSON Viewer -->
-            <div class="json-viewer">
-                <h5>JSON Completo</h5>
-                <pre id="jsonViewer" class="json-content"></pre>
-            </div>
+
 
             <!-- Golden Record Upload -->
             <div class="form-group">
@@ -80,23 +82,61 @@
                 <input type="file" id="goldenRecordFile" class="file-input" accept=".csv">
                 <label for="goldenRecordFile" class="file-label">Seleccionar archivo CSV</label>
                 <span class="file-name" id="goldenRecordFileName">Ningún archivo seleccionado</span>
-                <small>Carga el Golden Record para esta versión</small>
+                <small class="form-hint">Carga el Golden Record para esta versión</small>
             </div>
         </div>
     </form>
 
     <div class="form-footer">
-        <button type="button" id="searchBtn" class="btn btn-primary">
-            Buscar Metadata
-        </button>
         <button type="button" id="loadBtn" class="btn btn-success" style="display: none;">
-            Cargar Golden Record
+            Validar Estructura
         </button>
     </div>
 </div>
 
 <div id="status" style="display: none; margin-top: 30px;"></div>
 <div id="result" style="display: none; margin-top: 20px;"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.search-input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.btn-search {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: 3px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 300;
+    cursor: pointer;
+    height: 48px; /* Igual que input height */
+    white-space: nowrap;
+    transition: background 0.3s;
+    min-width: 100px;
+}
+
+.btn-search:hover {
+    background: var(--color-primary-dark);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    color: #666;
+    font-size: 13px;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}

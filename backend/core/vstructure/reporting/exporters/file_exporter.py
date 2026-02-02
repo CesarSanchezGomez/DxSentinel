@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Dict, List
 from ..models import ValidationReport
 from ..errors import ReportingErrors
-from vstructure.reporting.formatters.base_formatter import BaseFormatter
+from ....vstructure.reporting.formatters.base_formatter import BaseFormatter
 
 
 class FileExporter:

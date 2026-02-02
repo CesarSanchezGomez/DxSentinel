@@ -1,0 +1,58 @@
+{
+  "system_info": {
+    "created_by": "MetadataManager",
+    "creation_timestamp": "2026-02-02T02:48:27.754635",
+    "parameters": {
+      "id": "SF12321",
+      "cliente": "NADRO",
+      "consultor": "DAVID VALERO"
+    },
+    "directory_structure": "/metadata/SF12321/20260202_v2/"
+  },
+  "document_info": {
+    "id": "SF12321",
+    "timestamp": "2026-02-02T02:48:27.747295",
+    "content_hash": "4f184a63bbe4",
+    "source_name": "SDM_Principal",
+    "namespaces": {
+      "xml": "http://www.w3.org/XML/1998/namespace"
+    },
+    "version_xml": null,
+    "encoding": null,
+    "stats": {
+      "node_count": 761,
+      "unique_tags": [
+        "country",
+        "country-specific-fields",
+        "dg-filters",
+        "display-format",
+        "display-order-follows",
+        "format",
+        "format-group",
+        "hris-action",
+        "hris-element",
+        "hris-element-ref",
+        "hris-field",
+        "hris-field-ref",
+        "hris-mapping",
+        "hris-section",
+        "hris-sync-mappings",
+        "instruction",
+        "my-filter",
+        "permission-group-filter",
+        "picklist",
+        "reg-ex",
+        "succession-data-model",
+        "trigger-rule"
+      ]
+    }
+  },
+  "custom_metadata": {
+    "main_xml_path": "backend\\storage\\uploads\\20260202_024827_b022ebbc.xml",
+    "csf_xml_paths": [
+      "backend\\storage\\uploads\\20260202_024817_1a4f3fdc.xml"
+    ],
+    "file_count": 2,
+    "filter_applied": "hris-only"
+  }
+}

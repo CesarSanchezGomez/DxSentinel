@@ -94,17 +94,27 @@ class MetadataAdapter:
     ) -> MetadataContext:
         """
         Carga metadata directamente desde archivo pickle.
+        ACTUALIZADO: Usa nueva estructura backend/storage/metadata/
         """
-        # Buscar en la estructura de metadata
-        metadata_base = Path("metadata")
+        # Buscar en la NUEVA estructura de metadata
+        metadata_base = Path("backend/storage/metadata")
+        
+        if not metadata_base.exists():
+            # Intentar estructuras alternativas
+            metadata_base = Path("storage/metadata")
+            if not metadata_base.exists():
+                metadata_base = Path("metadata")
         
         if not metadata_base.exists():
             raise FileNotFoundError(f"Directorio metadata no encontrado: {metadata_base}")
+        
+        print(f"   Buscando en: {metadata_base}")
         
         # Buscar instancia
         instance_path = metadata_base / instance_id
         if not instance_path.exists():
             raise FileNotFoundError(f"Instancia metadata no encontrada: {instance_id}")
+        print(f"   ✓ Instancia encontrada: {instance_path}")
         
         # Buscar versión específica o última
         if version:
@@ -125,19 +135,35 @@ class MetadataAdapter:
             version_path = version_dirs[0]
             version = version_path.name
         
+        print(f"   ✓ Versión encontrada: {version_path}")
+        
         # Cargar metadata.json para información
-        metadata_file = version_path / "metadata.json"
+        metadata_file = version_path / f"metadata_{instance_id}.json"
         metadata_info = {}
         if metadata_file.exists():
+            print(f"   Cargando metadata info: {metadata_file.name}")
             with open(metadata_file, 'r', encoding='utf-8') as f:
                 metadata_info = json.load(f)
+        else:
+            # Intentar cualquier archivo metadata_*.json
+            metadata_files = list(version_path.glob("metadata_*.json"))
+            if metadata_files:
+                metadata_file = metadata_files[0]
+                print(f"   Cargando metadata info alternativo: {metadata_file.name}")
+                with open(metadata_file, 'r', encoding='utf-8') as f:
+                    metadata_info = json.load(f)
         
         # Cargar document.pkl (XMLDocument serializado)
-        pickle_file = version_path / "document.pkl"
+        pickle_file = version_path / f"document_{instance_id}.pkl"
         if not pickle_file.exists():
-            raise FileNotFoundError(f"Archivo pickle no encontrado: {pickle_file}")
+            # Intentar cualquier document_*.pkl
+            pickle_files = list(version_path.glob("document_*.pkl"))
+            if pickle_files:
+                pickle_file = pickle_files[0]
+            else:
+                raise FileNotFoundError(f"Archivo pickle no encontrado en: {version_path}")
         
-        print(f"   Leyendo pickle: {pickle_file}")
+        print(f"   Leyendo pickle: {pickle_file.name}")
         
         with open(pickle_file, 'rb') as f:
             xml_document = pickle.load(f)
@@ -152,8 +178,10 @@ class MetadataAdapter:
         # Extraer metadata del XMLDocument
         cls._extract_from_xml_document(xml_document, metadata_context)
         
+        print(f"   ✓ Metadata cargada: {len(metadata_context.entities)} entidades, "
+              f"{len(metadata_context.field_by_full_path)} campos")
+        
         return metadata_context
-    
     @classmethod
     def _extract_from_xml_document(
         cls, 

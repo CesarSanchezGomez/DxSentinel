@@ -1,7 +1,7 @@
-# src/vstructure/orchestrator.py - MODIFICADO
+# src/vstructure/orchestrator.py - CORREGIDO
 """
 Orquestador principal del sistema de validación estructural.
-ACTUALIZADO: Ahora espera instance_id, version y golden_record.
+ACTUALIZADO: Pasa parsed_metadata al comparador.
 """
 
 import sys
@@ -48,7 +48,8 @@ class ValidationOrchestrator:
         instance_id: str,
         version: str,
         golden_record: str,
-        report_formats: Optional[List[str]] = None
+        report_formats: Optional[List[str]] = None,
+        output_dir: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Ejecuta validación completa con los nuevos parámetros.
@@ -62,6 +63,9 @@ class ValidationOrchestrator:
         Returns:
             Diccionario con resultados de validación y reporte en memoria
         """
+        if output_dir is None:
+            output_dir = self._get_persistent_output_dir()
+    
         # Configurar valores por defecto
         if report_formats is None:
             report_formats = ["json", "csv"]
@@ -142,13 +146,14 @@ class ValidationOrchestrator:
                     for err in trans_context.errors
                 ])
             
-            # PASO 4: Crear contexto de validación
+            # PASO 4: Crear contexto de validación con parsed_metadata
             print(f"\n⚖️  4. PREPARANDO VALIDACIÓN")
             
             validation_context, val_error = self.comparator.create_validation_context(
                 transform_context=trans_context,
                 metadata_instance_id=instance_id,
-                metadata_version=version
+                metadata_version=version,
+                parsed_metadata=parsed_metadata  # <-- CORRECCIÓN: Pasar parsed_metadata
             )
             
             if val_error:
@@ -193,7 +198,7 @@ class ValidationOrchestrator:
                 "validation_time": sum(br.validation_time for br in batch_results),
                 "csv_columns": csv_context.total_columns,
                 "csv_entities": len(trans_context.entities),
-                "metadata_entities": len(validation_context.metadata_context.entities)
+                "metadata_entities": len(validation_context.metadata_context.entities) if hasattr(validation_context, 'metadata_context') else 0
             }
             
             print(f"\n   📊 Estadísticas:")
@@ -205,7 +210,6 @@ class ValidationOrchestrator:
             print(f"\n📊 6. GENERANDO REPORTES EN MEMORIA")
             
             # Crear un directorio temporal para la generación del reporte
-            # (algunos módulos pueden esperar una ruta, pero no guardaremos el archivo)
             import tempfile
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Generar reportes en el directorio temporal
@@ -214,7 +218,7 @@ class ValidationOrchestrator:
                     source_csv=golden_record,
                     source_metadata=f"{instance_id}_{version}",
                     validation_stats=validation_stats,
-                    output_dir=temp_dir,
+                    output_dir=output_dir,
                     base_filename=f"validation_{self.execution_id}",
                     formats=report_formats
                 )
@@ -257,6 +261,13 @@ class ValidationOrchestrator:
             
         return results
     
+# src/vstructure/orchestrator.py - CORRECCIÓN: Cargar PICKLE, no JSON
+    def _get_persistent_output_dir(self) -> str:
+        """Obtiene directorio persistente para guardar reportes"""
+        base_dir = Path("backend/storage/reports")
+        base_dir.mkdir(parents=True, exist_ok=True)
+        return str(base_dir)
+    
     def _load_parsed_metadata(
         self, 
         instance_id: str, 
@@ -275,7 +286,7 @@ class ValidationOrchestrator:
         Estructura esperada:
         backend/storage/metadata/{instance_id}/{version}/
         ├── document_{instance_id}.json
-        ├── document_{instance_id}.pkl
+        ├── document_{instance_id}.pkl  <-- ESTE ES EL IMPORTANTE
         └── metadata_{instance_id}.json
         """
         try:
@@ -283,7 +294,7 @@ class ValidationOrchestrator:
             metadata_base = Path("backend/storage/metadata")
             
             if not metadata_base.exists():
-                # Intentar estructura alternativa si no existe
+                # Intentar estructuras alternativas si no existe
                 metadata_base = Path("storage/metadata")
                 if not metadata_base.exists():
                     metadata_base = Path("metadata")
@@ -306,23 +317,34 @@ class ValidationOrchestrator:
             files_in_version = list(version_path.glob("*"))
             print(f"   Archivos en versión: {[f.name for f in files_in_version]}")
             
-            # Prioridad 1: Cargar document_{instance_id}.json (metadata ya parseada)
-            json_file_pattern = f"document_{instance_id}.json"
-            json_file = version_path / json_file_pattern
+            # CORRECCIÓN: Cargar el archivo PICKLE (XMLDocument serializado)
+            pickle_file_pattern = f"document_{instance_id}.pkl"
+            pickle_file = version_path / pickle_file_pattern
             
-            # Si no existe con el patrón, buscar cualquier document_*.json
-            if not json_file.exists():
-                json_files = list(version_path.glob("document_*.json"))
-                if json_files:
-                    json_file = json_files[0]
-                    print(f"   Usando archivo alternativo: {json_file.name}")
+            # Si no existe con el patrón, buscar cualquier document_*.pkl
+            if not pickle_file.exists():
+                pickle_files = list(version_path.glob("document_*.pkl"))
+                if pickle_files:
+                    pickle_file = pickle_files[0]
+                    print(f"   Usando archivo pickle alternativo: {pickle_file.name}")
+                else:
+                    raise FileNotFoundError(f"Archivo document_*.pkl no encontrado en: {version_path}")
             
-            if not json_file.exists():
-                raise FileNotFoundError(f"Archivo document_*.json no encontrado en: {version_path}")
+            print(f"   Cargando PICKLE: {pickle_file}")
             
-            print(f"   Cargando: {json_file}")
-            with open(json_file, 'r', encoding='utf-8') as f:
-                parsed_data = json.load(f)
+            # Cargar el objeto XMLDocument serializado
+            import pickle
+            with open(pickle_file, 'rb') as f:
+                xml_document = pickle.load(f)
+            
+            # Ahora necesitamos convertir el XMLDocument a un diccionario
+            # que pueda ser procesado por MetadataAdapter.adapt_parsed_metadata
+            
+            # Crear una estructura compatible con lo que espera MetadataAdapter
+            parsed_data = {
+                "metadata": {},
+                "structure": self._xml_document_to_dict(xml_document)
+            }
             
             # Intentar cargar metadata.json para información adicional
             metadata_file_pattern = f"metadata_{instance_id}.json"
@@ -338,14 +360,19 @@ class ValidationOrchestrator:
                 with open(metadata_file, 'r', encoding='utf-8') as f:
                     metadata_info = json.load(f)
                 
-                # Añadir información de metadata al parsed_data
-                if "metadata" not in parsed_data:
-                    parsed_data["metadata"] = metadata_info
-                else:
-                    # Fusionar metadata
-                    parsed_data["metadata"].update(metadata_info)
+                # Añadir información de metadata
+                parsed_data["metadata"] = metadata_info
                 
                 print(f"   ✓ Metadata adicional cargada: {metadata_file.name}")
+            
+            # Añadir información básica si no existe
+            if "instance_id" not in parsed_data["metadata"]:
+                parsed_data["metadata"]["instance_id"] = instance_id
+            if "version" not in parsed_data["metadata"]:
+                parsed_data["metadata"]["version"] = version
+            
+            print(f"   ✓ Metadata PICKLE cargada correctamente")
+            print(f"   ✓ Objeto XMLDocument cargado")
             
             return parsed_data
             
@@ -353,6 +380,61 @@ class ValidationOrchestrator:
             print(f"   ❌ Error cargando metadata: {e}")
             print(f"   Traceback: {traceback.format_exc()}")
             return None
+    
+    def _xml_document_to_dict(self, xml_document) -> Dict[str, Any]:
+        """
+        Convierte un objeto XMLDocument a un diccionario compatible.
+        
+        Args:
+            xml_document: Objeto XMLDocument serializado
+            
+        Returns:
+            Diccionario con la estructura del documento
+        """
+        try:
+            # Función recursiva para convertir nodos
+            def node_to_dict(node):
+                result = {}
+                
+                # Extraer propiedades básicas del nodo
+                if hasattr(node, 'tag'):
+                    result['tag'] = node.tag
+                if hasattr(node, 'technical_id'):
+                    result['technical_id'] = node.technical_id
+                if hasattr(node, 'node_type'):
+                    # Convertir node_type Enum a string
+                    node_type = node.node_type
+                    if hasattr(node_type, 'value'):
+                        result['node_type'] = node_type.value
+                    else:
+                        result['node_type'] = str(node_type)
+                
+                # Extraer atributos
+                if hasattr(node, 'attributes'):
+                    result['attributes'] = dict(node.attributes)
+                
+                # Procesar hijos recursivamente
+                if hasattr(node, 'children'):
+                    children = []
+                    for child in node.children:
+                        child_dict = node_to_dict(child)
+                        if child_dict:
+                            children.append(child_dict)
+                    if children:
+                        result['children'] = children
+                
+                return result
+            
+            # Procesar el root del documento
+            if hasattr(xml_document, 'root'):
+                return node_to_dict(xml_document.root)
+            else:
+                print("   ⚠ XMLDocument no tiene atributo 'root'")
+                return {}
+                
+        except Exception as e:
+            print(f"   ⚠ Error convirtiendo XMLDocument a dict: {e}")
+            return {}
     
     def _validate_batch_directly(
         self,
