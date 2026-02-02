@@ -102,3 +102,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={"detail": exc.detail}
     )
+
+@app.get("/structure", response_class=HTMLResponse)
+async def structure_page(request: Request, user=Depends(get_current_user)):
+    """Página de structure version"""
+    return templates.TemplateResponse("structure.html", {
+        "request": request,
+        "user": get_user_context(user)
+    })

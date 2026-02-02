@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Structure Version{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Structure Version</h2>
+    <p class="page-description">Visualiza y carga versiones de metadata</p>
+</div>
+
+<div class="form-container">
+    <div class="form-header">
+        <h3>Metadata Version</h3>
+    </div>
+
+    <form id="structureForm" class="form-content">
+        <div class="form-group">
+            <label for="instanceId">ID de Instancia:</label>
+            <input type="text" id="instanceId" class="text-input" placeholder="Ej: SF12321" required>
+            <small>Ingresa el ID de la instancia de metadata</small>
+        </div>
+
+        <div class="form-group">
+            <label for="lastVersionCheck">
+                <input type="checkbox" id="lastVersionCheck" checked>
+                Última versión
+            </label>
+            <small>Si está marcado, se usará la versión más reciente</small>
+        </div>
+
+        <div class="form-group" id="versionGroup" style="display: none;">
+            <label for="versionSelect">Versión:</label>
+            <select id="versionSelect" class="select-input" disabled>
+                <option value="">Cargando versiones...</option>
+            </select>
+            <small>Selecciona una versión específica</small>
+        </div>
+
+        <!-- Preview Section -->
+        <div id="previewSection" class="preview-section" style="display: none;">
+            <div class="preview-header">
+                <h4>Información de Metadata</h4>
+            </div>
+            <div class="preview-content">
+                <div class="preview-row">
+                    <span class="preview-label">ID:</span>
+                    <span id="previewId" class="preview-value">-</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Cliente:</span>
+                    <span id="previewCliente" class="preview-value">-</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Consultor:</span>
+                    <span id="previewConsultor" class="preview-value">-</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Fecha:</span>
+                    <span id="previewFecha" class="preview-value">-</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-label">Versión:</span>
+                    <span id="previewVersion" class="preview-value">-</span>
+                </div>
+                <div class="preview-row full-width">
+                    <span class="preview-label">Ruta:</span>
+                    <span id="previewPath" class="preview-value path">-</span>
+                </div>
+            </div>
+
+            <!-- JSON Viewer -->
+            <div class="json-viewer">
+                <h5>JSON Completo</h5>
+                <pre id="jsonViewer" class="json-content"></pre>
+            </div>
+
+            <!-- Golden Record Upload -->
+            <div class="form-group">
+                <label for="goldenRecordFile">Golden Record CSV:</label>
+                <input type="file" id="goldenRecordFile" class="file-input" accept=".csv">
+                <label for="goldenRecordFile" class="file-label">Seleccionar archivo CSV</label>
+                <span class="file-name" id="goldenRecordFileName">Ningún archivo seleccionado</span>
+                <small>Carga el Golden Record para esta versión</small>
+            </div>
+        </div>
+    </form>
+
+    <div class="form-footer">
+        <button type="button" id="searchBtn" class="btn btn-primary">
+            Buscar Metadata
+        </button>
+        <button type="button" id="loadBtn" class="btn btn-success" style="display: none;">
+            Cargar Golden Record
+        </button>
+    </div>
+</div>
+
+<div id="status" style="display: none; margin-top: 30px;"></div>
+<div id="result" style="display: none; margin-top: 20px;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/structure.js"></script>
+{% endblock %}

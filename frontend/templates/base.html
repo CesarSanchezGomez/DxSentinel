@@ -72,8 +72,27 @@
                 </li>
             </ul>
         </nav>
+
+        <nav>
+            <ul class="header-quicklinks" id="main-nav">
+                <li class="{% if request.url.path == '/' %}active{% endif %}">
+                    <a href="/">Home</a>
+                </li>
+                <li class="{% if request.url.path == '/upload' %}active{% endif %}">
+                    <a href="/upload">Upload</a>
+                </li>
+                <li class="{% if request.url.path == '/split' %}active{% endif %}">
+                    <a href="/split">Split Layouts</a>
+                </li>
+                <li class="{% if request.url.path == '/structure' %}active{% endif %}">
+                    <a href="/structure">Structure Version</a>
+                </li>
+            </ul>
+        </nav>
     </div>
+
 </header>
+
 
 <main class="main-content">
     <div class="content-wrapper">
