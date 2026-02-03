@@ -37,6 +37,7 @@ class ValidationError:
     actual: Optional[Any] = None
     metadata_path: Optional[str] = None      # Ruta en metadata para debugging
     details: Optional[Dict] = None
+    person_id_external: Optional[str] = None
 
 
 @dataclass

@@ -1,4 +1,4 @@
-# comparator/validators/not_null.py
+# comparator/validators/not_null.py - CORREGIDO
 """
 Regla: Campos requeridos no deben ser nulos/vacíos.
 """
@@ -30,7 +30,8 @@ class NotNullRule(BaseRule):
         value: Optional[str] = None,
         row_index: Optional[int] = None,
         csv_row_index: Optional[int] = None,
-        column_name: Optional[str] = None
+        column_name: Optional[str] = None,
+        person_id_external: Optional[str] = None  # <-- NUEVO PARÁMETRO
     ) -> List[ValidationError]:
         errors = []
         
@@ -54,7 +55,8 @@ class NotNullRule(BaseRule):
                     csv_row_index=csv_row_index,
                     entity_id=entity_id,
                     field_id=field_metadata.field_id,
-                    column_name=column_name or f"{entity_id}_{field_metadata.field_id}"
+                    column_name=column_name or f"{entity_id}_{field_metadata.field_id}",
+                    person_id_external=person_id_external  # <-- PASA EL IDENTIFICADOR
                 )
             )
         

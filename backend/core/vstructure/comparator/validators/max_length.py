@@ -1,4 +1,4 @@
-# comparator/validators/max_length.py
+# comparator/validators/max_length.py - CORREGIDO
 """
 Regla: Validación de longitud máxima.
 """
@@ -30,7 +30,8 @@ class MaxLengthRule(BaseRule):
         value: Optional[str] = None,
         row_index: Optional[int] = None,
         csv_row_index: Optional[int] = None,
-        column_name: Optional[str] = None
+        column_name: Optional[str] = None,
+        person_id_external: Optional[str] = None  # <-- NUEVO PARÁMETRO
     ) -> List[ValidationError]:
         errors = []
         
@@ -60,7 +61,8 @@ class MaxLengthRule(BaseRule):
                     column_name=column_name or f"{entity_id}_{field_metadata.field_id}",
                     max_length=max_length,
                     actual_length=actual_length,
-                    value=value_str
+                    value=value_str,
+                    person_id_external=person_id_external  # <-- PASA EL IDENTIFICADOR
                 )
             )
         

@@ -1,4 +1,4 @@
-# comparator/validators/data_type.py
+# comparator/validators/data_type.py - CORREGIDO
 """
 Regla: Validación de tipo de dato.
 """
@@ -43,7 +43,8 @@ class DataTypeRule(BaseRule):
         value: Optional[str] = None,
         row_index: Optional[int] = None,
         csv_row_index: Optional[int] = None,
-        column_name: Optional[str] = None
+        column_name: Optional[str] = None,
+        person_id_external: Optional[str] = None  # <-- NUEVO PARÁMETRO
     ) -> List[ValidationError]:
         errors = []
         
@@ -72,7 +73,8 @@ class DataTypeRule(BaseRule):
                     field_id=field_metadata.field_id,
                     column_name=column_name or f"{entity_id}_{field_metadata.field_id}",
                     expected_type=data_type,
-                    actual_value=value_str[:50]  # Truncar para mensaje
+                    actual_value=value_str[:50],  # Truncar para mensaje
+                    person_id_external=person_id_external  # <-- PASA EL IDENTIFICADOR
                 )
             )
         

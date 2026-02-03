@@ -1,6 +1,6 @@
-# reporting/formatters/csv_formatter.py
 """
 Formateador CSV para reportes.
+ACTUALIZADO: Columnas en español, sin timestamp/row_index.
 """
 
 import csv
@@ -29,21 +29,24 @@ class CSVFormatter(BaseFormatter):
         # Configurar writer CSV
         writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
         
-        # Escribir header
+        # Escribir header en español
         header = [
-            "timestamp", "row_index", "csv_row_index", "entity_id",
-            "field_id", "column_name", "error_code", "level",
-            "message", "expected", "actual", "metadata_path"
+            "identificador",
+            "campo_id",
+            "columna",
+            "codigo_error",
+            "nivel",
+            "mensaje",
+            "valor_esperado",
+            "valor_actual",
+            "ruta_metadata"
         ]
         writer.writerow(header)
         
         # Escribir cada entrada
         for entry in report.entries:
             row = [
-                entry.timestamp.isoformat(),
-                entry.row_index or "",
-                entry.csv_row_index or "",
-                entry.entity_id or "",
+                entry.identificador or "",
                 entry.field_id or "",
                 entry.column_name or "",
                 entry.error_code,

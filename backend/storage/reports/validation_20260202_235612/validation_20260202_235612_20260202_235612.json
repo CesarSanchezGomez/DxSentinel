@@ -1,0 +1,146 @@
+{
+  "report_id": "validation_20260202_235612",
+  "timestamp": "2026-02-02T23:56:12.537402",
+  "source_csv": "backend\\storage\\reports\\validation_20260202_235612\\input_golden.csv",
+  "source_metadata": "SF12321_20260202_v2",
+  "summary": "Validación completada con ❌ 10 errores. Errores más frecuentes: REQUIRED_COLUMN_MISSING (9), REQUIRED_VALUE_MISSING (1).",
+  "entries": [
+    {
+      "identificador": null,
+      "field_id": "custom-string16",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: employmentInfo.custom-string16",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "end-date",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: employmentInfo.end-date",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "relationship-type",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: jobRelationsInfo.relationship-type",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "rel-user-id",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: jobRelationsInfo.rel-user-id",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "end-date",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: globalAssignmentInfo.end-date",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "payroll-end-date",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.payroll-end-date",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "start-date",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.start-date",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "company",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.company",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "end-date",
+      "column_name": null,
+      "error_code": "REQUIRED_COLUMN_MISSING",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.end-date",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    },
+    {
+      "identificador": null,
+      "field_id": "custom-string2",
+      "column_name": "homeAddress_home_custom-string2",
+      "error_code": "REQUIRED_VALUE_MISSING",
+      "message": "Valor requerido faltante en homeAddress_home.custom-string2",
+      "level": "error",
+      "expected": null,
+      "actual": null,
+      "metadata_path": null,
+      "details": null
+    }
+  ],
+  "metrics": {
+    "total_rows": 1,
+    "total_batches": 1,
+    "total_errors": 10,
+    "total_warnings": 0,
+    "validation_time": 0.0004703998565673828,
+    "error_counts": {
+      "REQUIRED_COLUMN_MISSING": 9,
+      "REQUIRED_VALUE_MISSING": 1
+    },
+    "identificador_counts": {
+      "personInfo_person-id-external": 10
+    },
+    "severity_counts": {
+      "ERROR": 10
+    }
+  }
+}

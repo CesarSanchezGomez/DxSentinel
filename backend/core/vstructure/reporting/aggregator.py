@@ -1,7 +1,9 @@
 # reporting/aggregator.py - CORREGIDO
+
 """
 Agregador de métricas y resultados.
 CORREGIDO: Eliminar importación circular.
+ACTUALIZADO: Usar personInfo_person-id-external como identificador.
 """
 
 from typing import List, Dict, Any
@@ -17,7 +19,7 @@ class ReportAggregator:
     
     @staticmethod
     def create_report(
-        batch_results: List[Any],  # Cambiado para evitar importación circular
+        batch_results: List[Any],
         source_csv: str,
         source_metadata: str,
         validation_stats: Dict[str, Any]
@@ -73,9 +75,7 @@ class ReportAggregator:
         
         for error in validation_errors:
             # Extraer atributos dinámicamente
-            row_index = getattr(error, 'row_index', None)
-            csv_row_index = getattr(error, 'csv_row_index', None)
-            entity_id = getattr(error, 'entity_id', None)
+            person_id_external = getattr(error, 'person_id_external', None)
             field_id = getattr(error, 'field_id', None)
             column_name = getattr(error, 'column_name', None)
             error_code = getattr(error, 'code', 'UNKNOWN_ERROR')
@@ -96,10 +96,7 @@ class ReportAggregator:
                     level = ReportLevel.WARNING
             
             entry = ReportEntry(
-                timestamp=datetime.now(),
-                row_index=row_index,
-                csv_row_index=csv_row_index,
-                entity_id=entity_id,
+                identificador=person_id_external,  # <-- Usar valor real
                 field_id=field_id,
                 column_name=column_name,
                 error_code=error_code,
@@ -138,7 +135,6 @@ class ReportAggregator:
             # Extraer severidad dinámicamente
             severity = getattr(error, 'severity', None)
             error_code = getattr(error, 'code', 'UNKNOWN')
-            entity_id = getattr(error, 'entity_id', None)
             
             # Contar por severidad
             if severity:
@@ -157,11 +153,11 @@ class ReportAggregator:
                 metrics.error_counts.get(error_code, 0) + 1
             )
             
-            # Contar por entidad
-            if entity_id:
-                metrics.entity_error_counts[entity_id] = (
-                    metrics.entity_error_counts.get(entity_id, 0) + 1
-                )
+            # Contar por identificador
+            identificador = "personInfo_person-id-external"
+            metrics.identificador_counts[identificador] = (
+                metrics.identificador_counts.get(identificador, 0) + 1
+            )
         
         return metrics
     
@@ -210,19 +206,19 @@ class ReportAggregator:
         """
         detailed = report.to_dict()
         
-        # Análisis por entidad
-        entity_analysis = {}
+        # Análisis por identificador
+        identificador_analysis = {}
         for entry in report.entries:
-            if entry.entity_id:
-                if entry.entity_id not in entity_analysis:
-                    entity_analysis[entry.entity_id] = {
+            if entry.identificador:
+                if entry.identificador not in identificador_analysis:
+                    identificador_analysis[entry.identificador] = {
                         "total_errors": 0,
                         "total_warnings": 0,
                         "field_counts": {},
                         "error_types": {}
                     }
                 
-                analysis = entity_analysis[entry.entity_id]
+                analysis = identificador_analysis[entry.identificador]
                 
                 if entry.level == ReportLevel.ERROR:
                     analysis["total_errors"] += 1
@@ -240,26 +236,7 @@ class ReportAggregator:
                     analysis["error_types"].get(entry.error_code, 0) + 1
                 )
         
-        detailed["entity_analysis"] = entity_analysis
-        
-        # Filas con más errores
-        row_error_counts = {}
-        for entry in report.entries:
-            if entry.row_index is not None:
-                row_error_counts[entry.row_index] = (
-                    row_error_counts.get(entry.row_index, 0) + 1
-                )
-        
-        top_problem_rows = sorted(
-            row_error_counts.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:10]
-        
-        detailed["top_problem_rows"] = [
-            {"row_index": row, "error_count": count}
-            for row, count in top_problem_rows
-        ]
+        detailed["identificador_analysis"] = identificador_analysis
         
         # Limitar entradas si son muchas
         if len(report.entries) > max_entries:

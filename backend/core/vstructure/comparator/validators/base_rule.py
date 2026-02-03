@@ -1,4 +1,4 @@
-# comparator/validators/base_rule.py
+# comparator/validators/base_rule.py - CORREGIDO
 """
 Contrato base para todas las reglas de validación.
 """
@@ -34,7 +34,8 @@ class BaseRule(ABC):
         value: Optional[str] = None,
         row_index: Optional[int] = None,
         csv_row_index: Optional[int] = None,
-        column_name: Optional[str] = None
+        column_name: Optional[str] = None,
+        person_id_external: Optional[str] = None  # <-- NUEVO PARÁMETRO
     ) -> List[ValidationError]:
         """
         Ejecuta la validación.
@@ -47,6 +48,7 @@ class BaseRule(ABC):
             row_index: Índice de fila en datos (opcional)
             csv_row_index: Índice real en CSV (opcional)
             column_name: Nombre original de columna (opcional)
+            person_id_external: Identificador único del registro (opcional)
             
         Returns:
             Lista de errores de validación

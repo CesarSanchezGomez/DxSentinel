@@ -133,7 +133,23 @@ class RuleEngine:
         """
         errors = []
         
-        # Para cada entidad en la fila
+        # 1. OBTENER person_id_external DE raw_values USANDO EL ÍNDICE DE COLUMNA
+        person_id_external = None
+        
+        # Buscar índice de la columna "personInfo_person-id-external" en el CSV
+        col_index = self._find_person_id_external_column_index(context)
+        
+        if col_index is not None and hasattr(row, 'raw_values'):
+            # Acceder directamente al valor en raw_values
+            if col_index < len(row.raw_values):
+                person_id_external = row.raw_values[col_index]
+                # Limpiar el valor
+                if person_id_external is not None:
+                    person_id_external = str(person_id_external).strip()
+                    if person_id_external == '':
+                        person_id_external = None
+        
+        # 2. Para cada entidad en la fila
         for entity_id, entity_data in row.data_by_entity.items():
             # Para cada campo en la entidad
             for field_id, value in entity_data.items():
@@ -146,6 +162,9 @@ class RuleEngine:
                     entity_metadata = context.metadata_context.entities[entity_id]
                     field_metadata = entity_metadata.fields.get(field_id)
                 
+                # Obtener nombre real de columna
+                column_name = self._get_column_name(context, entity_id, field_id)
+                
                 # Ejecutar reglas por campo
                 field_errors = self._validate_field(
                     entity_id=entity_id,
@@ -153,13 +172,61 @@ class RuleEngine:
                     value=value,
                     row_index=row.original_row_index,
                     csv_row_index=row.csv_row_index,
-                    column_name=None,  # TODO: Obtener nombre real de columna
+                    column_name=column_name,
+                    person_id_external=person_id_external,
                     context=context
                 )
                 
                 errors.extend(field_errors)
         
         return errors
+    
+    def _find_person_id_external_column_index(self, context: ValidationContext) -> Optional[int]:
+        """
+        Encuentra el índice de columna para personInfo_person-id-external.
+        
+        Returns:
+            Índice de columna o None si no se encuentra
+        """
+        if not hasattr(context, 'transform_context'):
+            return None
+            
+        transform_context = context.transform_context
+        
+        # Buscar en parsed_columns
+        if hasattr(transform_context, 'parsed_columns'):
+            for idx, parsed_col in enumerate(transform_context.parsed_columns):
+                if (parsed_col.element_id == "personInfo" and 
+                    parsed_col.field_id == "person-id-external"):
+                    return idx
+        
+        # Buscar en csv_context headers
+        if (hasattr(transform_context, 'csv_context') and 
+            hasattr(transform_context.csv_context, 'headers')):
+            headers = transform_context.csv_context.headers
+            if headers:
+                try:
+                    return headers.index("personInfo_person-id-external")
+                except ValueError:
+                    pass
+        
+        return None
+    
+    def _get_column_name(self, context: ValidationContext, entity_id: str, field_id: str) -> Optional[str]:
+        """Obtiene el nombre original de columna."""
+        if not hasattr(context, 'transform_context'):
+            return None
+            
+        transform_context = context.transform_context
+        
+        # Buscar en entities
+        if (hasattr(transform_context, 'entities') and 
+            entity_id in transform_context.entities):
+            entity_data = transform_context.entities[entity_id]
+            if field_id in entity_data.field_mapping:
+                return entity_data.field_mapping[field_id].original_name
+        
+        return None
     
     def _validate_field(
         self,
@@ -169,6 +236,7 @@ class RuleEngine:
         row_index: int,
         csv_row_index: int,
         column_name: Optional[str],
+        person_id_external: Optional[str],  # <-- NUEVO PARÁMETRO
         context: ValidationContext
     ) -> List[ValidationError]:
         """Ejecuta todas las reglas de campo para un campo específico."""
@@ -242,7 +310,8 @@ class RuleEngine:
                     value=value,
                     row_index=row_index,
                     csv_row_index=csv_row_index,
-                    column_name=column_name
+                    column_name=column_name,
+                    person_id_external=person_id_external
                 )
                 
                 errors.extend(rule_errors)

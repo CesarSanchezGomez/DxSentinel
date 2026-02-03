@@ -1,0 +1,11 @@
+identificador,campo_id,columna,codigo_error,nivel,mensaje,valor_esperado,valor_actual,ruta_metadata
+,end-date,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: employmentInfo.end-date,,,
+,custom-string16,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: employmentInfo.custom-string16,,,
+,rel-user-id,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: jobRelationsInfo.rel-user-id,,,
+,relationship-type,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: jobRelationsInfo.relationship-type,,,
+,end-date,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: globalAssignmentInfo.end-date,,,
+,start-date,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: pensionPayoutsInfo.start-date,,,
+,end-date,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: pensionPayoutsInfo.end-date,,,
+,company,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: pensionPayoutsInfo.company,,,
+,payroll-end-date,,REQUIRED_COLUMN_MISSING,error,Columna requerida faltante: pensionPayoutsInfo.payroll-end-date,,,
+1003,custom-string2,MEX_homeAddress_home_custom-string2,REQUIRED_VALUE_MISSING,error,Valor requerido faltante en homeAddress_home.custom-string2,,,

@@ -83,5 +83,55 @@
     "directory": "backend\\storage\\reports\\validation_20260202_024603",
     "timestamp": "2026-02-02T02:46:03.400704",
     "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235114": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235114",
+    "timestamp": "2026-02-02T23:51:14.433768",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235134": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235134",
+    "timestamp": "2026-02-02T23:51:34.635229",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235612": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235612",
+    "timestamp": "2026-02-02T23:56:12.555547",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235651": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235651",
+    "timestamp": "2026-02-02T23:56:51.357771",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235704": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235704",
+    "timestamp": "2026-02-02T23:57:04.580820",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235908": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235908",
+    "timestamp": "2026-02-02T23:59:08.453698",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260202_235940": {
+    "directory": "backend\\storage\\reports\\validation_20260202_235940",
+    "timestamp": "2026-02-02T23:59:40.855009",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_001057": {
+    "directory": "backend\\storage\\reports\\validation_20260203_001057",
+    "timestamp": "2026-02-03T00:10:57.840174",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_001119": {
+    "directory": "backend\\storage\\reports\\validation_20260203_001119",
+    "timestamp": "2026-02-03T00:11:19.768919",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_001125": {
+    "directory": "backend\\storage\\reports\\validation_20260203_001125",
+    "timestamp": "2026-02-03T00:11:25.968635",
+    "user": "diego.flores@dxgrow.com"
   }
 }

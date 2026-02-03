@@ -1,4 +1,4 @@
-# comparator/validators/required_column.py
+# comparator/validators/required_column.py - CORREGIDO
 """
 Regla: Columnas requeridas deben existir en CSV.
 """
@@ -30,7 +30,8 @@ class RequiredColumnRule(BaseRule):
         value: Optional[str] = None,
         row_index: Optional[int] = None,
         csv_row_index: Optional[int] = None,
-        column_name: Optional[str] = None
+        column_name: Optional[str] = None,
+        person_id_external: Optional[str] = None  # <-- NUEVO PARÁMETRO (aunque no se usa en esta regla)
     ) -> List[ValidationError]:
         errors = []
         
@@ -46,6 +47,7 @@ class RequiredColumnRule(BaseRule):
                     for field_id in required_fields:
                         errors.append(
                             ComparatorErrors.required_column_missing(meta_entity_id, field_id)
+                            # No tiene person_id_external porque es error a nivel columna, no fila
                         )
                 continue
             
@@ -59,6 +61,7 @@ class RequiredColumnRule(BaseRule):
                 if not field_exists:
                     errors.append(
                         ComparatorErrors.required_column_missing(meta_entity_id, field_id)
+                        # No tiene person_id_external porque es error a nivel columna, no fila
                     )
         
         return errors

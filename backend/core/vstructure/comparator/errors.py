@@ -40,20 +40,22 @@ class ComparatorErrors:
     
     # Errores de reglas
     @staticmethod
-    def required_column_missing(entity_id: str, field_id: str) -> ValidationError:
+    def required_column_missing(entity_id: str, field_id: str, person_id_external: str = None) -> ValidationError:
         return ValidationError(
             code="REQUIRED_COLUMN_MISSING",
             severity=ValidationSeverity.ERROR,
             message=f"Columna requerida faltante: {entity_id}.{field_id}",
             scope=ValidationScope.ENTITY,
             entity_id=entity_id,
-            field_id=field_id
+            field_id=field_id,
+            person_id_external=person_id_external
         )
     
     @staticmethod
     def required_value_missing(
         row_index: int, csv_row_index: int, 
-        entity_id: str, field_id: str, column_name: str
+        entity_id: str, field_id: str, column_name: str,
+        person_id_external: str = None
     ) -> ValidationError:
         return ValidationError(
             code="REQUIRED_VALUE_MISSING",
@@ -64,14 +66,16 @@ class ComparatorErrors:
             csv_row_index=csv_row_index,
             entity_id=entity_id,
             field_id=field_id,
-            column_name=column_name
+            column_name=column_name,
+            person_id_external=person_id_external
         )
     
     @staticmethod
     def invalid_data_type(
         row_index: int, csv_row_index: int,
         entity_id: str, field_id: str, column_name: str,
-        expected_type: str, actual_value: str
+        expected_type: str, actual_value: str,
+        person_id_external: str = None
     ) -> ValidationError:
         return ValidationError(
             code="INVALID_DATA_TYPE",
@@ -84,14 +88,16 @@ class ComparatorErrors:
             field_id=field_id,
             column_name=column_name,
             expected=expected_type,
-            actual=actual_value
+            actual=actual_value,
+            person_id_external=person_id_external
         )
     
     @staticmethod
     def max_length_exceeded(
         row_index: int, csv_row_index: int,
         entity_id: str, field_id: str, column_name: str,
-        max_length: int, actual_length: int, value: str
+        max_length: int, actual_length: int, value: str,
+        person_id_external: str = None
     ) -> ValidationError:
         return ValidationError(
             code="MAX_LENGTH_EXCEEDED",
@@ -105,15 +111,17 @@ class ComparatorErrors:
             column_name=column_name,
             expected=max_length,
             actual=actual_length,
-            details={"truncated_value": value[:50] + "..." if len(value) > 50 else value}
+            details={"truncated_value": value[:50] + "..." if len(value) > 50 else value},
+            person_id_external=person_id_external
         )
     
     @staticmethod
-    def rule_execution_failed(rule_id: str, details: str = "") -> ValidationError:
+    def rule_execution_failed(rule_id: str, details: str = "", person_id_external: str = None) -> ValidationError:
         return ValidationError(
             code="RULE_EXECUTION_FAILED",
             severity=ValidationSeverity.FATAL,
             message=f"Fallo en ejecución de regla '{rule_id}': {details}",
             scope=ValidationScope.GLOBAL,
-            details={"rule_id": rule_id}
+            details={"rule_id": rule_id},
+            person_id_external=person_id_external
         )

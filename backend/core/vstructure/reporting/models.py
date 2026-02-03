@@ -1,4 +1,5 @@
 # reporting/models.py
+
 """
 Modelos de datos para reporting.
 """
@@ -24,10 +25,7 @@ class ReportLevel(Enum):
 @dataclass
 class ReportEntry:
     """Entrada individual en el reporte."""
-    timestamp: datetime
-    row_index: Optional[int]
-    csv_row_index: Optional[int]
-    entity_id: Optional[str]
+    identificador: Optional[str]  # personInfo_person-id-external
     field_id: Optional[str]
     column_name: Optional[str]
     error_code: str
@@ -41,10 +39,7 @@ class ReportEntry:
     def to_dict(self) -> Dict[str, Any]:
         """Convierte a diccionario para serialización."""
         return {
-            "timestamp": self.timestamp.isoformat(),
-            "row_index": self.row_index,
-            "csv_row_index": self.csv_row_index,
-            "entity_id": self.entity_id,
+            "identificador": self.identificador,
             "field_id": self.field_id,
             "column_name": self.column_name,
             "error_code": self.error_code,
@@ -69,8 +64,8 @@ class ValidationMetrics:
     # Conteo por tipo de error
     error_counts: Dict[str, int] = field(default_factory=dict)
     
-    # Conteo por entidad
-    entity_error_counts: Dict[str, int] = field(default_factory=dict)
+    # Conteo por identificador
+    identificador_counts: Dict[str, int] = field(default_factory=dict)
     
     # Conteo por severidad
     severity_counts: Dict[str, int] = field(default_factory=dict)
@@ -84,7 +79,7 @@ class ValidationMetrics:
             "total_warnings": self.total_warnings,
             "validation_time": self.validation_time,
             "error_counts": self.error_counts,
-            "entity_error_counts": self.entity_error_counts,
+            "identificador_counts": self.identificador_counts,
             "severity_counts": self.severity_counts
         }
 
