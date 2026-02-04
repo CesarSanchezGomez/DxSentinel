@@ -133,5 +133,25 @@
     "directory": "backend\\storage\\reports\\validation_20260203_001125",
     "timestamp": "2026-02-03T00:11:25.968635",
     "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_001934": {
+    "directory": "backend\\storage\\reports\\validation_20260203_001934",
+    "timestamp": "2026-02-03T00:19:34.750959",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_133525": {
+    "directory": "backend\\storage\\reports\\validation_20260203_133525",
+    "timestamp": "2026-02-03T13:35:25.648205",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_134748": {
+    "directory": "backend\\storage\\reports\\validation_20260203_134748",
+    "timestamp": "2026-02-03T13:47:48.327528",
+    "user": "diego.flores@dxgrow.com"
+  },
+  "20260203_135033": {
+    "directory": "backend\\storage\\reports\\validation_20260203_135033",
+    "timestamp": "2026-02-03T13:50:33.909415",
+    "user": "diego.flores@dxgrow.com"
   }
 }

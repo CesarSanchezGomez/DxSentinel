@@ -1,8 +1,8 @@
 {
-  "report_id": "validation_20260203_001119",
-  "timestamp": "2026-02-03T00:11:19.742231",
-  "source_csv": "backend\\storage\\reports\\validation_20260203_001119\\input_golden.csv",
-  "source_metadata": "SF12321_20260202_v2",
+  "report_id": "validation_20260203_133525",
+  "timestamp": "2026-02-03T13:35:25.600144",
+  "source_csv": "backend\\storage\\reports\\validation_20260203_133525\\input_golden.csv",
+  "source_metadata": "SF12321_20260201_v1",
   "summary": "Validación completada con ❌ 10 errores. Errores más frecuentes: REQUIRED_COLUMN_MISSING (9), REQUIRED_VALUE_MISSING (1).",
   "entries": [
     {
@@ -67,10 +67,10 @@
     },
     {
       "identificador": null,
-      "field_id": "start-date",
+      "field_id": "payroll-end-date",
       "column_name": null,
       "error_code": "REQUIRED_COLUMN_MISSING",
-      "message": "Columna requerida faltante: pensionPayoutsInfo.start-date",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.payroll-end-date",
       "level": "error",
       "expected": null,
       "actual": null,
@@ -91,10 +91,10 @@
     },
     {
       "identificador": null,
-      "field_id": "company",
+      "field_id": "start-date",
       "column_name": null,
       "error_code": "REQUIRED_COLUMN_MISSING",
-      "message": "Columna requerida faltante: pensionPayoutsInfo.company",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.start-date",
       "level": "error",
       "expected": null,
       "actual": null,
@@ -103,10 +103,10 @@
     },
     {
       "identificador": null,
-      "field_id": "payroll-end-date",
+      "field_id": "company",
       "column_name": null,
       "error_code": "REQUIRED_COLUMN_MISSING",
-      "message": "Columna requerida faltante: pensionPayoutsInfo.payroll-end-date",
+      "message": "Columna requerida faltante: pensionPayoutsInfo.company",
       "level": "error",
       "expected": null,
       "actual": null,
@@ -131,7 +131,7 @@
     "total_batches": 1,
     "total_errors": 10,
     "total_warnings": 0,
-    "validation_time": 0.0004971027374267578,
+    "validation_time": 0.0005025863647460938,
     "error_counts": {
       "REQUIRED_COLUMN_MISSING": 9,
       "REQUIRED_VALUE_MISSING": 1

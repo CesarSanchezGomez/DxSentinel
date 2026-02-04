@@ -1,18 +1,18 @@
 {
   "system_info": {
     "created_by": "MetadataManager",
-    "creation_timestamp": "2026-02-01T10:44:46.044352",
+    "creation_timestamp": "2026-02-03T13:36:52.368143",
     "parameters": {
-      "id": "SF1223433",
+      "id": "SF012321",
       "cliente": "NADRO",
-      "consultor": "JAIME MARTINEZ"
+      "consultor": "DIEGO"
     },
-    "directory_structure": "/metadata/SF1223433/20260201_v1/"
+    "directory_structure": "/metadata/SF012321/20260203_v1/"
   },
   "document_info": {
-    "id": "SF1223433",
-    "timestamp": "2026-02-01T10:44:46.029860",
-    "content_hash": "5db438485558",
+    "id": "SF012321",
+    "timestamp": "2026-02-03T13:36:52.360584",
+    "content_hash": "4f184a63bbe4",
     "source_name": "SDM_Principal",
     "namespaces": {
       "xml": "http://www.w3.org/XML/1998/namespace"
@@ -20,21 +20,13 @@
     "version_xml": null,
     "encoding": null,
     "stats": {
-      "node_count": 1702,
+      "node_count": 761,
       "unique_tags": [
-        "background-element",
-        "background-element-ref",
         "country",
         "country-specific-fields",
-        "custom-filters",
-        "data-field",
         "dg-filters",
         "display-format",
         "display-order-follows",
-        "edit-template",
-        "element-permission",
-        "field-criteria",
-        "filter-module",
         "format",
         "format-group",
         "hris-action",
@@ -49,22 +41,18 @@
         "my-filter",
         "permission-group-filter",
         "picklist",
-        "rating-field",
         "reg-ex",
-        "standard-element",
-        "standard-element-ref",
         "succession-data-model",
-        "tab-element",
-        "trigger-rule",
-        "view-template"
+        "trigger-rule"
       ]
     }
   },
   "custom_metadata": {
-    "main_xml_path": "backend\\storage\\uploads\\20260201_104444_75715994.xml",
+    "main_xml_path": "backend\\storage\\uploads\\20260203_133651_f296bc45.xml",
     "csf_xml_paths": [
-      "backend\\storage\\uploads\\20260201_104421_2cab8ff6.xml"
+      "backend\\storage\\uploads\\20260203_133640_76d4301b.xml"
     ],
-    "file_count": 2
+    "file_count": 2,
+    "filter_applied": "hris-only"
   }
 }

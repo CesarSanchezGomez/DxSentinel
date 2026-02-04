@@ -1,8 +1,8 @@
 {
-  "report_id": "validation_20260203_001125",
-  "timestamp": "2026-02-03T00:11:25.921634",
-  "source_csv": "backend\\storage\\reports\\validation_20260203_001125\\input_golden.csv",
-  "source_metadata": "SF12321_20260202_v2",
+  "report_id": "validation_20260203_001934",
+  "timestamp": "2026-02-03T00:19:34.714253",
+  "source_csv": "backend\\storage\\reports\\validation_20260203_001934\\input_golden.csv",
+  "source_metadata": "SF12321_20260201_v1",
   "summary": "Validación completada con ❌ 297 errores. Errores más frecuentes: REQUIRED_VALUE_MISSING (264), MAX_LENGTH_EXCEEDED (24), REQUIRED_COLUMN_MISSING (9).",
   "entries": [
     {
@@ -3623,7 +3623,7 @@
     "total_batches": 1,
     "total_errors": 297,
     "total_warnings": 0,
-    "validation_time": 0.0030150413513183594,
+    "validation_time": 0.0033884048461914062,
     "error_counts": {
       "REQUIRED_COLUMN_MISSING": 9,
       "REQUIRED_VALUE_MISSING": 264,
